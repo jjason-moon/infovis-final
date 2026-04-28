@@ -86,12 +86,95 @@ function BarChart({ mode, selectedCountry, selectedCat, metric }) {
   </div>
 }
 
+// ── DualRangeSlider ───────────────────────────────────────────────────
+function DualRangeSlider({ lo, hi, min, max, labels, onChange }) {
+  const trackRef  = useRef(null)
+  const dragging  = useRef(null)
+
+  const pct = v => (v - min) / (max - min) * 100
+
+  const getVal = clientX => {
+    const rect = trackRef.current.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    return Math.round(ratio * (max - min) + min)
+  }
+
+  const startDrag = which => e => {
+    e.preventDefault()
+    dragging.current = which
+    const move = e => {
+      const v = getVal(e.clientX)
+      if (dragging.current === 'lo') onChange(Math.min(v, hi - 1), hi)
+      else                           onChange(lo, Math.max(v, lo + 1))
+    }
+    const up = () => {
+      dragging.current = null
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseup',   up)
+    }
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup',   up)
+  }
+
+  const handle = (which) => (
+    <div
+      onMouseDown={startDrag(which)}
+      style={{
+        position: 'absolute',
+        left: pct(which === 'lo' ? lo : hi) + '%',
+        transform: 'translateX(-50%)',
+        width: 13, height: 13,
+        background: 'var(--accent)',
+        border: '2px solid #0D0D14',
+        borderRadius: '50%',
+        cursor: 'grab',
+        zIndex: 2,
+        userSelect: 'none',
+        flexShrink: 0,
+      }}
+    />
+  )
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, minWidth: 32, textAlign: 'right' }}>
+        {labels[lo]}
+      </span>
+      <div ref={trackRef} style={{ position: 'relative', width: 140, height: 20, display: 'flex', alignItems: 'center' }}>
+        <div style={{ position: 'absolute', width: '100%', height: 3, background: 'rgba(255,255,255,0.12)', borderRadius: 2 }} />
+        <div style={{
+          position: 'absolute',
+          left: pct(lo) + '%',
+          width: (pct(hi) - pct(lo)) + '%',
+          height: 3,
+          background: 'var(--accent)',
+          borderRadius: 2,
+        }} />
+        {handle('lo')}
+        {handle('hi')}
+      </div>
+      <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, minWidth: 32 }}>
+        {labels[hi]}
+      </span>
+    </div>
+  )
+}
+
 // ── AreaChart (bottom left) ───────────────────────────────────────────
 function AreaChart({ countryCode, highlightCat }) {
-  const svgRef      = useRef(null)
-  const tipRef      = useRef(null)
-  const [lo, setLo] = useState(0)
-  const [hi, setHi] = useState(6)
+  const svgRef        = useRef(null)
+  const tipRef        = useRef(null)
+  const [lo, setLo]   = useState(0)
+  const [hi, setHi]   = useState(6)
+  const [flash, setFlash] = useState(false)
+
+  // flash header whenever the selected country changes
+  useEffect(() => {
+    if (!countryCode) return
+    setFlash(true)
+    const t = setTimeout(() => setFlash(false), 700)
+    return () => clearTimeout(t)
+  }, [countryCode])
 
   const draw = useCallback(() => {
     const svgEl = svgRef.current
@@ -103,7 +186,7 @@ function AreaChart({ countryCode, highlightCat }) {
 
     const W  = svgEl.parentElement?.offsetWidth  || 400
     const H  = svgEl.parentElement?.offsetHeight || 200
-    const ML = 38, MR = 12, MT = 8, MB = 24
+    const ML = 40, MR = 16, MT = 12, MB = 24
     const PW = W - ML - MR
     const PH = H - MT - MB
 
@@ -115,16 +198,15 @@ function AreaChart({ countryCode, highlightCat }) {
       return obj
     })
 
-    const series = d3.stack()
-      .keys(AREA_CATS.map(c => c.id))
-      .offset(d3.stackOffsetExpand)(rows)
+    const allVals = AREA_CATS.flatMap(cat => rows.map(r => r[cat.id]))
+    const maxVal  = Math.ceil(Math.max(...allVals) / 5) * 5 || 50
 
-    const x = d3.scalePoint().domain(sliced).range([0, PW]).padding(0.05)
-    const y = d3.scaleLinear().domain([0, 1]).range([PH, 0])
+    const x = d3.scalePoint().domain(sliced).range([0, PW]).padding(0.1)
+    const y = d3.scaleLinear().domain([0, maxVal]).range([PH, 0])
     const g = d3.select(svgEl).append('g').attr('transform', `translate(${ML},${MT})`)
 
     // grid
-    ;[0, 0.25, 0.5, 0.75, 1].forEach(v => {
+    y.ticks(4).forEach(v => {
       g.append('line')
         .attr('x1', 0).attr('x2', PW).attr('y1', y(v)).attr('y2', y(v))
         .attr('stroke', 'rgba(255,255,255,0.04)').attr('stroke-width', 0.5)
@@ -132,56 +214,56 @@ function AreaChart({ countryCode, highlightCat }) {
         .attr('x', -4).attr('y', y(v))
         .attr('text-anchor', 'end').attr('dominant-baseline', 'central')
         .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.3)')
-        .text((v * 100).toFixed(0) + '%')
+        .text(v + '%')
     })
 
-    const area = d3.area()
+    const lineFn = d3.line()
       .x((_, i) => x(sliced[i]))
-      .y0(d => y(d[0])).y1(d => y(d[1]))
+      .y(d => y(d))
       .curve(d3.curveCatmullRom)
 
     const tip = tipRef.current
 
-    series.forEach((s, si) => {
-      const cat = AREA_CATS[si]
-      const dim = highlightCat && highlightCat !== cat.id
-      g.append('path').datum(s)
-        .attr('d', area)
-        .attr('fill', cat.color)
-        .attr('opacity', dim ? 0.07 : 0.7)
-        .attr('stroke', cat.color)
-        .attr('stroke-width', dim ? 0 : 0.5)
-        .attr('stroke-opacity', 0.5)
-        .style('transition', 'opacity .25s')
-        .style('cursor', 'crosshair')
-        .on('mouseenter', function () {
-          d3.select(this).attr('opacity', dim ? 0.07 : 0.92)
-        })
-        .on('mousemove', function (event) {
-          if (!tip) return
-          // find closest year
-          const [mx] = d3.pointer(event, g.node())
-          const step = PW / Math.max(sliced.length - 1, 1)
-          const xi   = Math.round(mx / step)
-          const idx  = Math.max(0, Math.min(xi, sliced.length - 1))
-          const yr   = sliced[idx]
-          const val  = rows[idx]?.[cat.id] || 0
+    AREA_CATS.forEach(cat => {
+      const dim  = highlightCat && highlightCat !== cat.id
+      const vals = rows.map(r => r[cat.id])
+      const op   = dim ? 0.08 : 0.85
 
-          tip.innerHTML = `
-            <span style="color:${cat.color};font-weight:600">${cat.id}</span>
-            &nbsp;
-            <span style="color:rgba(232,232,240,0.5)">${yr}</span>
-            &nbsp;·&nbsp;
-            <strong style="color:#E8E8F0">${val}%</strong>
-          `
-          tip.style.left    = (event.clientX + 14) + 'px'
-          tip.style.top     = (event.clientY - 32) + 'px'
-          tip.style.opacity = '1'
-        })
-        .on('mouseleave', function () {
-          d3.select(this).attr('opacity', dim ? 0.07 : 0.7)
-          if (tip) tip.style.opacity = '0'
-        })
+      // line
+      g.append('path')
+        .datum(vals)
+        .attr('d', lineFn)
+        .attr('fill', 'none')
+        .attr('stroke', cat.color)
+        .attr('stroke-width', dim ? 1 : 2)
+        .attr('opacity', op)
+        .style('transition', 'opacity .25s')
+
+      // dots + tooltip
+      rows.forEach((row, i) => {
+        g.append('circle')
+          .attr('cx', x(sliced[i])).attr('cy', y(row[cat.id])).attr('r', dim ? 2 : 3.5)
+          .attr('fill', cat.color).attr('opacity', op)
+          .style('cursor', 'crosshair')
+          .on('mouseenter', function (event) {
+            d3.select(this).attr('r', 5).attr('opacity', 1)
+            if (!tip) return
+            tip.innerHTML = `
+              <span style="color:${cat.color};font-weight:600">${cat.id}</span>
+              &nbsp;
+              <span style="color:rgba(232,232,240,0.5)">${sliced[i]}</span>
+              &nbsp;·&nbsp;
+              <strong style="color:#E8E8F0">${row[cat.id]}%</strong>
+            `
+            tip.style.left    = (event.clientX + 14) + 'px'
+            tip.style.top     = (event.clientY - 32) + 'px'
+            tip.style.opacity = '1'
+          })
+          .on('mouseleave', function () {
+            d3.select(this).attr('r', dim ? 2 : 3.5).attr('opacity', op)
+            if (tip) tip.style.opacity = '0'
+          })
+      })
     })
 
     // x axis
@@ -200,15 +282,6 @@ function AreaChart({ countryCode, highlightCat }) {
     if (svgRef.current?.parentElement) ro.observe(svgRef.current.parentElement)
     return () => ro.disconnect()
   }, [draw])
-
-  const handleMin = e => {
-    const v = parseInt(e.target.value)
-    setLo(v >= hi ? hi - 1 : v)
-  }
-  const handleMax = e => {
-    const v = parseInt(e.target.value)
-    setHi(v <= lo ? lo + 1 : v)
-  }
 
   return (
     <div className="geo-area-panel">
@@ -231,37 +304,57 @@ function AreaChart({ countryCode, highlightCat }) {
         }}
       />
       {/* header */}
-      <div
-        className="d-flex align-items-center flex-wrap gap-2 px-3"
-        style={{ minHeight: 48, borderBottom: '1px solid var(--border)', background: 'var(--surface2)', flexShrink: 0 }}
-      >
-        <div>
-          <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)' }}>
-            View 2 · Temporal Trend
-          </div>
-          <div style={{ fontWeight: 700, fontSize: 13 }}>
-            {countryCode
-              ? COUNTRIES.find(c => c.code === countryCode)?.name + ' — category trend'
-              : 'Global — all countries'}
-          </div>
-        </div>
+      {(() => {
+        const country = countryCode ? COUNTRIES.find(c => c.code === countryCode) : null
+        const accentColor = country ? (CAT_COLOR[country.top] || 'var(--accent)') : 'var(--accent)'
+        return (
+          <div
+            className="d-flex align-items-center flex-wrap gap-2 px-3"
+            style={{
+              minHeight: 48,
+              borderBottom: '1px solid var(--border)',
+              borderLeft: `3px solid ${accentColor}`,
+              background: flash ? 'rgba(232,240,96,0.05)' : 'var(--surface2)',
+              transition: 'background 0.5s, border-left-color 0.3s',
+              flexShrink: 0,
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                View 2 · Temporal Trend
+                {!countryCode && (
+                  <span style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: 1, fontWeight: 400, textTransform: 'none' }}>
+                    · linked to map ↑
+                  </span>
+                )}
+              </div>
+              {country ? (
+                <div style={{ fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 17, lineHeight: 1 }}>{country.flag}</span>
+                  {country.name}
+                  <span style={{ fontSize: 10, color: accentColor, fontWeight: 600 }}>· {country.top}</span>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>Global — all countries</div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, opacity: 0.7 }}>
+                    ↑ Click a country bubble on the map to see its trend
+                  </div>
+                </div>
+              )}
+            </div>
 
-        {/* year range sliders */}
-        <div className="d-flex align-items-center gap-2 ms-auto">
-          <span style={{ fontSize: 11, color: 'var(--muted)' }}>Years:</span>
-          <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, minWidth: 32 }}>
-            {YEARS[lo]}
-          </span>
-          <input type="range" min={0} max={6} value={lo} step={1} onChange={handleMin}
-            style={{ width: 60, accentColor: 'var(--accent)' }} />
-          <span style={{ fontSize: 10, color: 'var(--muted)' }}>—</span>
-          <input type="range" min={0} max={6} value={hi} step={1} onChange={handleMax}
-            style={{ width: 60, accentColor: 'var(--accent)' }} />
-          <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, minWidth: 32 }}>
-            {YEARS[hi]}
-          </span>
-        </div>
-      </div>
+            {/* year range slider */}
+            <div className="d-flex align-items-center gap-2 ms-auto">
+              <span style={{ fontSize: 11, color: 'var(--muted)' }}>Years:</span>
+              <DualRangeSlider
+                lo={lo} hi={hi} min={0} max={6} labels={YEARS}
+                onChange={(newLo, newHi) => { setLo(newLo); setHi(newHi) }}
+              />
+            </div>
+          </div>
+        )
+      })()}
 
       {/* legend */}
       <div className="d-flex flex-wrap gap-2 px-3 pt-2" style={{ flexShrink: 0 }}>
@@ -590,7 +683,7 @@ export default function GeoExplorer() {
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedCat,     setSelectedCat]     = useState(null)
   const [metric,          setMetric]          = useState('videos')
-  const [highlightCat,    setHighlightCat]    = useState(null)
+  const [highlightCat] = useState(null)
   const [is3D,            setIs3D]            = useState(false)
 
   const handleCountryClick = useCallback(code => {
