@@ -365,16 +365,20 @@ export default function TitleAnalysis() {
     <section className="narrative reveal" id="ch4-content" style={{ paddingTop: 64, paddingBottom: 64 }}>
       {/* text intro */}
       <div style={{ maxWidth: 860, marginBottom: 40 }}>
-        <div className="eyebrow">Chapter III · Title Analysis</div>
+        <div className="eyebrow">Chapter III - Title Analysis</div>
         <h2 className="section-heading">
-          Clickbait is a <em>red herring.</em>
+          Clickbait might be a <em>red herring.</em>
         </h2>
         <div className="rule" />
         <p className="body-text">
-          A video&apos;s clickbait score has essentially <strong>zero correlation</strong> with
-          its engagement (r = 0.003). The audience has learned to see through manipulation.
-          But add an emoji — engagement rises 4%. Drag a brush on the scatter plot to filter
-          the word cloud and see which keywords dominate high-engagement videos.
+          A video&apos;s clickbait score shows near-zero correlation with engagement (r = 0.003).
+          Clickbait signals alone don&apos;t appear to drive performance. However, videos with
+          emojis see <strong>~4% higher engagement</strong>, while ALL CAPS titles are associated
+          with a slight drop.
+        </p>
+        <p className="body-text" style={{ fontSize: 13, fontStyle: 'italic', opacity: 0.6 }}>
+          Drag to select a region on the scatter plot to explore which keywords dominate
+          high-engagement videos.
         </p>
 
         {/* stat pills */}
