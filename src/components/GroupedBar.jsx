@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
+import { BAR_DATA } from './data'
 
 const CATS = [
   { id: 'Music',         color: '#F05A7E' },
@@ -14,294 +15,236 @@ const CATS = [
 ]
 
 const DATA = {
-  like:     { Music:6.8, Entertainment:5.9, Gaming:8.2, Sports:7.1, News:4.3, Science:7.4, Comedy:6.2, Education:6.9 },
-  comment:  { Music:2.1, Entertainment:2.8, Gaming:3.9, Sports:2.4, News:4.6, Science:2.2, Comedy:3.1, Education:2.5 },
-  duration: { Music:3.2, Entertainment:4.8, Gaming:6.7, Sports:4.1, News:5.3, Science:5.8, Comedy:3.9, Education:4.4 },
+  ...BAR_DATA,
+  duration: { Music: 4.6, Entertainment: 12.5, Gaming: 25.6, Sports: 12.4, News: 12.2, Science: 14.7, Comedy: 13.5, Education: 14.2 },
 }
 
 const LABELS = {
   like:     'Like / View Ratio (%)',
   comment:  'Comment / View Ratio (%)',
-  duration: 'Avg Trending Days',
+  duration: 'Avg Video Duration (min)',
 }
 
-// insight text per category per metric
-const INSIGHTS = {
-  like: {
-    Gaming:  'Gamers hit Like more than any other category',
-    Science: 'High approval — curious audiences validate content',
-    Music:   'Strong emotional connection drives likes',
-    News:    'Controversial content → lower like ratio',
-  },
-  comment: {
-    News:    'News sparks debate — most comments per view',
-    Gaming:  'Gaming communities are vocal and reactive',
-    Comedy:  'Jokes invite reactions and replies',
-    Science: 'Science audiences engage deeply in discussion',
-  },
-  duration: {
-    Gaming:  'Gaming videos stay trending the longest',
-    News:    'Breaking stories sustain interest for days',
-    Science: 'Educational content has long shelf life',
-    Music:   'Music fades fast — high peak, quick drop',
-  },
+const DESCRIPTIONS = {
+  like:     'Science earns the most likes per view (6.9%), followed by Music (6.0%). News has the lowest like ratio — controversial content attracts viewers but not approval.',
+  comment:  'News triggers far more comments per view than any other category (0.9%) — audiences feel compelled to respond. Science also sparks discussion at 0.8%.',
+  duration: 'Gaming videos are dramatically longer than any other category — averaging 25.6 minutes vs Music at just 4.6 minutes. Format shapes who watches and for how long.',
 }
 
-const COLOR = Object.fromEntries(CATS.map(c => [c.id, c.color]))
-
-// ── Animated Bar Chart ────────────────────────────────────────────────
-function BarChart({ metric }) {
+export default function GroupedBar() {
   const svgRef  = useRef(null)
   const wrapRef = useRef(null)
-  const prevRef = useRef({})
+  const tipRef  = useRef(null)
+  const [metric, setMetric] = useState('like')
 
   useEffect(() => {
-    drawOrUpdate()
+    draw(metric)
   }, [metric])
 
   useEffect(() => {
-    const ro = new ResizeObserver(drawOrUpdate)
+    const ro = new ResizeObserver(() => draw(metric))
     if (wrapRef.current) ro.observe(wrapRef.current)
     return () => ro.disconnect()
   }, [metric])
 
-  function drawOrUpdate() {
+  function draw(m) {
     const wrap  = wrapRef.current
     const svgEl = svgRef.current
     if (!wrap || !svgEl) return
 
     const W  = wrap.offsetWidth || 700
-    const H  = 220
-    const ML = 44, MR = 16, MT = 20, MB = 44
+    const H  = 280
+    const ML = 44, MR = 16, MT = 24, MB = 44
     const PW = W - ML - MR
     const PH = H - MT - MB
 
-    const vals   = DATA[metric]
+    const vals   = DATA[m]
     const maxVal = Math.max(...Object.values(vals)) * 1.15
 
-    // sort by current value
+    // sort descending
     const sorted = [...CATS]
       .map(c => ({ ...c, val: vals[c.id] || 0 }))
       .sort((a, b) => b.val - a.val)
 
-    const isFirst = Object.keys(prevRef.current).length === 0
-
     d3.select(svgEl).attr('width', W).attr('height', H)
-
-    let svg = d3.select(svgEl)
-    if (isFirst) {
-      svg.selectAll('*').remove()
-    }
-
-    const g = isFirst
-      ? svg.append('g').attr('class', 'main-g').attr('transform', `translate(${ML},${MT})`)
-      : svg.select('g.main-g')
+    const svg = d3.select(svgEl)
+    svg.selectAll('*').remove()
+    const g = svg.append('g').attr('transform', `translate(${ML},${MT})`)
 
     const x = d3.scaleBand().domain(sorted.map(d => d.id)).range([0, PW]).padding(0.22)
     const y = d3.scaleLinear().domain([0, maxVal]).range([PH, 0])
 
-    if (isFirst) {
-      // grid
-      y.ticks(4).forEach(v => {
-        g.append('line').attr('class', 'grid-line')
-          .attr('x1', 0).attr('x2', PW).attr('y1', y(v)).attr('y2', y(v))
-          .attr('stroke', 'rgba(255,255,255,0.05)').attr('stroke-width', 0.5)
-        g.append('text').attr('class', 'grid-label')
-          .attr('x', -8).attr('y', y(v))
-          .attr('text-anchor', 'end').attr('dominant-baseline', 'central')
-          .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.35)')
-          .text(v.toFixed(1))
-      })
+    // grid
+    y.ticks(4).forEach(v => {
       g.append('line')
-        .attr('x1', 0).attr('x2', PW).attr('y1', PH).attr('y2', PH)
-        .attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 0.5)
-    } else {
-      // update grid on metric change
-      g.selectAll('.grid-line').remove()
-      g.selectAll('.grid-label').remove()
-      y.ticks(4).forEach(v => {
-        g.insert('line', ':first-child').attr('class', 'grid-line')
-          .attr('x1', 0).attr('x2', PW).attr('y1', y(v)).attr('y2', y(v))
-          .attr('stroke', 'rgba(255,255,255,0.05)').attr('stroke-width', 0.5)
-        g.insert('text', ':first-child').attr('class', 'grid-label')
-          .attr('x', -8).attr('y', y(v))
-          .attr('text-anchor', 'end').attr('dominant-baseline', 'central')
-          .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.35)')
-          .text(v.toFixed(1))
-      })
-    }
+        .attr('x1', 0).attr('x2', PW)
+        .attr('y1', y(v)).attr('y2', y(v))
+        .attr('stroke', 'rgba(255,255,255,0.05)').attr('stroke-width', 0.5)
+      g.append('text')
+        .attr('x', -8).attr('y', y(v))
+        .attr('text-anchor', 'end').attr('dominant-baseline', 'central')
+        .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.35)')
+        .text(v.toFixed(1))
+    })
 
-    // highlight top 2 categories
-    const top2 = sorted.slice(0, 2).map(d => d.id)
+    // baseline
+    g.append('line')
+      .attr('x1', 0).attr('x2', PW)
+      .attr('y1', PH).attr('y2', PH)
+      .attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 0.5)
 
-    // ── bars ──
-    const bars = g.selectAll('.bar-group').data(sorted, d => d.id)
-
-    const barsEnter = bars.enter().append('g').attr('class', 'bar-group')
-
-    // rect
-    barsEnter.append('rect').attr('class', 'bar-rect')
-      .attr('rx', 3)
-      .attr('x', d => x(d.id))
-      .attr('width', x.bandwidth())
-      .attr('y', PH).attr('height', 0)
-      .transition().duration(700).delay((_, i) => i * 50).ease(d3.easeCubicOut)
-      .attr('y',      d => y(d.val))
-      .attr('height', d => PH - y(d.val))
-      .attr('fill',   d => d.color)
-      .attr('opacity', d => top2.includes(d.id) ? 0.92 : 0.55)
-
-    // value label
-    barsEnter.append('text').attr('class', 'bar-val-label')
+    // y-axis label
+    g.append('text')
+      .attr('transform', `rotate(-90)`)
+      .attr('x', -PH / 2).attr('y', -ML + 10)
       .attr('text-anchor', 'middle')
-      .attr('font-size', 10).attr('font-family', 'Syne, sans-serif').attr('font-weight', '700')
-      .attr('fill', d => d.color)
-      .attr('opacity', 0)
-      .attr('x', d => x(d.id) + x.bandwidth() / 2)
-      .attr('y', d => y(d.val) - 5)
-      .text(d => d.val.toFixed(1))
-      .transition().duration(300).delay((_, i) => i * 50 + 500)
-      .attr('opacity', 1)
+      .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.3)')
+      .text(LABELS[m])
 
-    // x label
-    barsEnter.append('text').attr('class', 'bar-x-label')
-      .attr('text-anchor', 'middle')
-      .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.5)')
-      .attr('x', d => x(d.id) + x.bandwidth() / 2)
-      .attr('y', PH + 14)
-      .text(d => d.id)
+    sorted.forEach((cat, i) => {
+      const bx   = x(cat.id)
+      const bw   = x.bandwidth()
+      const barH = PH - y(cat.val)
+      const isTop = i === 0
 
-    // highlight ring for top category
-    barsEnter.filter(d => d.id === sorted[0].id)
-      .append('rect').attr('class', 'highlight-ring')
-      .attr('rx', 3)
-      .attr('x', d => x(d.id) - 2).attr('width', x.bandwidth() + 4)
-      .attr('y', d => y(d.val) - 2)
-      .attr('height', d => PH - y(d.val) + 2)
-      .attr('fill', 'none')
-      .attr('stroke', d => d.color)
-      .attr('stroke-width', 1.5)
-      .attr('stroke-dasharray', '4 2')
-      .attr('opacity', 0.6)
+      // bar
+      g.append('rect')
+        .attr('x', bx).attr('y', y(cat.val))
+        .attr('width', bw).attr('height', barH)
+        .attr('rx', 3)
+        .attr('fill', cat.color)
+        .attr('opacity', isTop ? 0.92 : 0.60)
 
-    // hover interaction
-    barsEnter.append('rect').attr('class', 'hover-rect')
-      .attr('x', d => x(d.id)).attr('width', x.bandwidth())
-      .attr('y', 0).attr('height', PH)
-      .attr('fill', 'transparent').attr('cursor', 'default')
-      .on('mouseenter', function (event, d) {
-        const tip = document.getElementById('gb-tip')
-        if (!tip) return
-        const insight = INSIGHTS[metric]?.[d.id]
-        tip.innerHTML = `
-          <div style="color:${d.color};font-weight:700;margin-bottom:4px">${d.id}</div>
-          <div style="color:#E8E8F0">${LABELS[metric]}: <strong>${d.val.toFixed(2)}</strong></div>
-          ${insight ? `<div style="color:rgba(232,232,240,0.5);font-size:11px;margin-top:4px;font-style:italic">${insight}</div>` : ''}
-        `
-        tip.style.left    = (event.clientX + 14) + 'px'
-        tip.style.top     = (event.clientY - 48) + 'px'
-        tip.style.opacity = '1'
-      })
-      .on('mousemove', function (event) {
-        const tip = document.getElementById('gb-tip')
-        if (tip) { tip.style.left = (event.clientX + 14) + 'px'; tip.style.top = (event.clientY - 48) + 'px' }
-      })
-      .on('mouseleave', () => {
-        const tip = document.getElementById('gb-tip')
-        if (tip) tip.style.opacity = '0'
-      })
+      // dashed border for top
+      if (isTop) {
+        g.append('rect')
+          .attr('x', bx - 2).attr('y', y(cat.val) - 2)
+          .attr('width', bw + 4).attr('height', barH + 2)
+          .attr('rx', 3)
+          .attr('fill', 'none')
+          .attr('stroke', cat.color)
+          .attr('stroke-width', 1.5)
+          .attr('stroke-dasharray', '4 2')
+          .attr('opacity', 0.7)
+      }
 
-    // ── UPDATE existing bars with smooth transition ──
-    const barsUpdate = bars.merge(barsEnter)
+      // value label above bar
+      g.append('text')
+        .attr('x', bx + bw / 2).attr('y', y(cat.val) - 5)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', '700')
+        .attr('fill', cat.color)
+        .text(cat.val.toFixed(1))
 
-    barsUpdate.select('.bar-rect')
-      .transition().duration(600).ease(d3.easeCubicInOut)
-      .attr('x',      d => x(d.id))
-      .attr('width',  x.bandwidth())
-      .attr('y',      d => y(d.val))
-      .attr('height', d => PH - y(d.val))
-      .attr('fill',   d => d.color)
-      .attr('opacity', d => top2.includes(d.id) ? 0.92 : 0.55)
+      // x label
+      g.append('text')
+        .attr('x', bx + bw / 2).attr('y', PH + 14)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.5)')
+        .text(cat.id)
 
-    barsUpdate.select('.bar-val-label')
-      .transition().duration(600).ease(d3.easeCubicInOut)
-      .attr('x',  d => x(d.id) + x.bandwidth() / 2)
-      .attr('y',  d => y(d.val) - 5)
-      .attr('fill', d => d.color)
-      .text(d => d.val.toFixed(1))
-
-    barsUpdate.select('.bar-x-label')
-      .transition().duration(600)
-      .attr('x', d => x(d.id) + x.bandwidth() / 2)
-
-    barsUpdate.select('.hover-rect')
-      .attr('x', d => x(d.id)).attr('width', x.bandwidth())
-
-    barsUpdate.select('.highlight-ring')
-      .transition().duration(600).ease(d3.easeCubicInOut)
-      .attr('x',      d => x(d.id) - 2).attr('width', x.bandwidth() + 4)
-      .attr('y',      d => y(d.val) - 2)
-      .attr('height', d => PH - y(d.val) + 2)
-      .attr('stroke', d => d.color)
-
-    prevRef.current = vals
+      // hover area
+      g.append('rect')
+        .attr('x', bx).attr('y', 0)
+        .attr('width', bw).attr('height', PH)
+        .attr('fill', 'transparent')
+        .attr('cursor', 'default')
+        .on('mouseenter', function (event) {
+          const tip = tipRef.current
+          if (!tip) return
+          tip.innerHTML = `
+            <span style="color:${cat.color};font-weight:700">${cat.id}</span>
+            &nbsp;&nbsp;
+            <span style="color:rgba(232,232,240,0.5)">${LABELS[m]}:</span>
+            &nbsp;
+            <strong style="color:#E8E8F0">${cat.val.toFixed(2)}</strong>
+          `
+          tip.style.left    = (event.clientX + 14) + 'px'
+          tip.style.top     = (event.clientY - 36) + 'px'
+          tip.style.opacity = '1'
+        })
+        .on('mousemove', function (event) {
+          const tip = tipRef.current
+          if (tip) {
+            tip.style.left = (event.clientX + 14) + 'px'
+            tip.style.top  = (event.clientY - 36) + 'px'
+          }
+        })
+        .on('mouseleave', () => {
+          if (tipRef.current) tipRef.current.style.opacity = '0'
+        })
+    })
   }
-
-  return (
-    <div ref={wrapRef} style={{ width: '100%' }}>
-      <svg ref={svgRef} style={{ display: 'block', overflow: 'visible' }} />
-    </div>
-  )
-}
-
-// ── Main Component ────────────────────────────────────────────────────
-export default function GroupedBar() {
-  const [metric, setMetric] = useState('like')
 
   return (
     <section className="narrative reveal" id="ch2-content" style={{ paddingTop: 64, paddingBottom: 64 }}>
       <div style={{ maxWidth: 860, marginBottom: 40 }}>
         <div className="eyebrow">Chapter II - Categories</div>
         <h2 className="section-heading">
-          Sports packs arenas.<br /><em>Science</em> builds communities.
+          Science earns loyalty.<br /><em>News</em> sparks the debate.
         </h2>
         <div className="rule" />
         <p className="body-text">
-          Not all engagement looks the same. Gaming videos stay on the trending list the longest.
-          News drives the most comments per view — audiences debate, not just watch.
-          Switch metrics to see how each category shifts.
+          Different categories attract fundamentally different kinds of engagement.
+          Science leads on likes (6.9% per view) — audiences who watch tend to genuinely approve.
+          News leads on comments (0.9%) — people feel compelled to respond, agree, or argue.
+          And format matters too: Gaming videos average <strong>25 minutes</strong>, while
+          Music averages just <strong>4.6 minutes</strong>. The category you choose shapes
+          not just who watches, but how they engage.
+        </p>
+        <p className="body-text" style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 500 }}>
+          Switch between metrics to see how each category&apos;s profile shifts. ↓
         </p>
       </div>
 
-      {/* bar chart */}
+      {/* chart card */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '20px 24px' }}>
-        <div className="d-flex align-items-center gap-2 flex-wrap mb-3">
-          <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--muted)', marginRight: 4 }}>Metric:</span>
+
+        {/* metric tabs */}
+        <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
+          <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--muted)', marginRight: 4 }}>
+            Metric:
+          </span>
           {Object.entries(LABELS).map(([key, label]) => (
-            <button key={key} className={`gbtn ${metric === key ? 'active' : ''}`} onClick={() => setMetric(key)}>
+            <button
+              key={key}
+              className={`gbtn ${metric === key ? 'active' : ''}`}
+              onClick={() => setMetric(key)}
+            >
               {label}
             </button>
           ))}
         </div>
-        <BarChart metric={metric} />
+
+        {/* metric description */}
+        <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', marginBottom: 12, minHeight: 20 }}>
+          {DESCRIPTIONS[metric]}
+        </p>
+
+        {/* chart */}
+        <div ref={wrapRef} style={{ width: '100%' }}>
+          <svg ref={svgRef} style={{ display: 'block', overflow: 'visible' }} />
+        </div>
       </div>
 
       {/* tooltip */}
-      <div id="gb-tip" style={{
-        position: 'fixed',
-        background: 'rgba(18,18,30,0.96)',
-        border: '1px solid var(--border)',
-        borderRadius: 8,
-        padding: '10px 14px',
-        fontSize: 12,
-        lineHeight: 1.6,
-        pointerEvents: 'none',
-        opacity: 0,
-        transition: 'opacity .12s',
-        zIndex: 200,
-        maxWidth: 240,
-        backdropFilter: 'blur(8px)',
-      }} />
+      <div
+        ref={tipRef}
+        style={{
+          position: 'fixed',
+          background: 'rgba(18,18,30,0.96)',
+          border: '1px solid var(--border)',
+          borderRadius: 6,
+          padding: '7px 14px',
+          fontSize: 12,
+          pointerEvents: 'none',
+          opacity: 0,
+          transition: 'opacity .12s',
+          zIndex: 200,
+          whiteSpace: 'nowrap',
+          backdropFilter: 'blur(8px)',
+        }}
+      />
     </section>
   )
 }
