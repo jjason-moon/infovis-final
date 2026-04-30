@@ -37,26 +37,29 @@ export default function Home() {
         <section className="narrative reveal" id="intro">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 72, alignItems: 'center' }}>
             <div>
-              <div className="eyebrow">Prologue</div>
-              <h2 className="section-heading">Every day, millions compete for one spot.</h2>
+              <div className="eyebrow">Your Guide to Going Viral</div>
+              <h2 className="section-heading">
+                So you want to be a creator.
+              </h2>
               <div className="rule" />
               <p className="body-text">
-                YouTube&apos;s trending tab is one of the most competitive surfaces on the
-                internet — a daily snapshot of what a nation collectively decides is worth
-                watching. But behind the algorithm lie patterns that reveal something deeper:
-                the geography of taste, the rhythm of culture, and the vocabulary of attention.
+                Every day, millions of videos compete for a spot on YouTube&apos;s trending tab —
+                a daily snapshot of what the world collectively decides is worth watching.
+                But what actually drives that decision? Is it the category you choose?
+                The country you target? The way you write your title?
               </p>
               <p className="body-text">
-                TrendScope is our attempt to make those patterns visible — and navigable.
+                We analyzed <strong>10,000 trending videos</strong> across 23 countries and
+                6 years to find out. This is your data-driven playbook.
               </p>
             </div>
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                 {[
-                  { num: '4.6M', label: '2024 peak avg views',        color: 'var(--accent)' },
-                  { num: '8.27', label: 'Philippines top engagement',  color: 'var(--red)' },
-                  { num: '14',   label: 'Countries where Music is #1', color: 'var(--accent)' },
-                  { num: '~0',   label: 'Clickbait to engagement r',   color: 'var(--red)' },
+                  { num: '10K',  label: 'Trending videos analyzed', color: 'var(--accent)' },
+                  { num: '23',   label: 'Countries in the dataset',  color: 'var(--red)' },
+                  { num: '6',    label: 'Years of data (2020–2026)', color: 'var(--accent)' },
+                  { num: '~0',   label: 'Clickbait↔engagement r',   color: 'var(--red)' },
                 ].map(s => (
                   <div key={s.label} className="stat-card">
                     <div className="stat-num" style={{ color: s.color }}>{s.num}</div>
@@ -75,8 +78,8 @@ export default function Home() {
         <div className="ch-break reveal" id="ch1">
           <div className="ch-num">I</div>
           <div>
-            <div className="ch-text-title">The Geography of Trending</div>
-            <div className="ch-text-sub">Where you are shapes what you watch.</div>
+            <div className="ch-text-title">Find Your Market</div>
+            <div className="ch-text-sub">Where you want to be viral determines what you should make.</div>
           </div>
         </div>
 
@@ -86,24 +89,29 @@ export default function Home() {
             <div>
               <div className="eyebrow">Chapter I - Geography</div>
               <h2 className="section-heading">
-                Music unites the world.<br /><em>Everything else</em> divides it.
+                Music is the safest bet.<br /><em>But every market</em> is different.
               </h2>
               <div className="rule" />
               <p className="body-text">
-                Across 23 countries, one pattern dominates: <strong>Music</strong> is the #1
-                trending category in 14 of them — from Brazil to Japan to Germany.
+                Music is the #1 trending category in <strong>14 out of 23 countries</strong> —
+                the most globally consistent content type on the platform. If you have no strong
+                preference, Music is your safest entry point.
               </p>
               <p className="body-text">
-                Entertainment dominates in Southeast Asia and parts of Africa. People and Blogs
-                leads in Egypt and Pakistan. And the Philippines stands alone with the highest
-                engagement score globally at <strong>8.27</strong>.
+                But regional patterns diverge sharply. Entertainment dominates Southeast Asia
+                and parts of Africa. People &amp; Blogs leads in Egypt and Pakistan.
+                The Philippines stands alone with the highest engagement score globally
+                at <strong>8.27</strong> — a highly active, emotionally engaged audience.
               </p>
-              <div style={{ display: 'flex', gap: 10, fontSize: 12, fontStyle: 'italic', color: 'var(--muted)', marginTop: 16, opacity: 0.8 }}>
-                <span style={{ color: 'var(--accent)', fontStyle: 'normal' }}>&#8627;</span>
-                Scroll down to explore the interactive map.
-              </div>
+              <p className="body-text">
+                Before you decide what to make, decide <em>where</em> you want to be seen.
+                Then use the map below to study that market.
+              </p>
             </div>
             <div>
+              <div style={{ marginBottom: 10, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--muted)' }}>
+                Top engagement scores globally
+              </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
                 <PodiumCard rank="1" flag="🇵🇭" country="Philippines" value="8.27" cardStyle="gold" />
                 <PodiumCard rank="2" flag="🇦🇺" country="Australia"   value="7.91" cardStyle="silver" />
@@ -117,13 +125,15 @@ export default function Home() {
         </section>
 
         {/* GEO EXPLORER */}
-        <div id="geo-section" style={{ padding: '72px 56px 40px', maxWidth: 860 }}>
-          <div className="eyebrow">Interactive Explorer — Views 1 and 2</div>
-          <h2 className="section-heading">Now explore it yourself.</h2>
+        <div id="geo-section" style={{ padding: '48px 56px 32px', maxWidth: 860 }}>
+          <div className="eyebrow">Interactive — Views 1 and 2</div>
+          <h2 className="section-heading" style={{ fontSize: 'clamp(24px,3vw,38px)' }}>
+            Explore any country. See how its trends evolve.
+          </h2>
           <p className="body-text">
-            Click any bubble on the map to filter the dashboard. The bar chart shows that
-            country&apos;s category breakdown. The stacked area chart shows how those categories
-            evolved over time — drag the slider to zoom into any time window.
+            Click a country bubble to see its category breakdown and how that mix has
+            shifted year by year. Switch to Category mode to compare which countries
+            are strongest for a given content type.
           </p>
         </div>
         <GeoExplorer />
@@ -132,8 +142,8 @@ export default function Home() {
         <div className="ch-break reveal" id="ch2" style={{ marginTop: 80 }}>
           <div className="ch-num">II</div>
           <div>
-            <div className="ch-text-title">The Hierarchy of Attention</div>
-            <div className="ch-text-sub">Not all views are created equal.</div>
+            <div className="ch-text-title">Understand Your Audience</div>
+            <div className="ch-text-sub">Likes, comments, video length — every category has its own signature.</div>
           </div>
         </div>
         <GroupedBar />
@@ -142,8 +152,8 @@ export default function Home() {
         <div className="ch-break reveal" id="ch3">
           <div className="ch-num">III</div>
           <div>
-            <div className="ch-text-title">The Language of Trending Titles</div>
-            <div className="ch-text-sub">What you say matters less than how you say it.</div>
+            <div className="ch-text-title">Write a Better Title</div>
+            <div className="ch-text-sub">The data on what actually makes people click — and stay.</div>
           </div>
         </div>
         <TitleAnalysis />
@@ -154,18 +164,29 @@ export default function Home() {
           className="reveal"
           style={{ padding: '120px 56px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
         >
-          <div className="eyebrow">Epilogue</div>
-          <h2 className="section-heading" style={{ textAlign: 'center', maxWidth: 640 }}>
-            The algorithm does not decide culture.<br /><em>People do.</em>
+          <div className="eyebrow">The Playbook</div>
+          <h2 className="section-heading" style={{ textAlign: 'center', maxWidth: 700 }}>
+            Pick your market. Know your audience.<br /><em>Be honest.</em>
           </h2>
-          <p className="body-text" style={{ textAlign: 'center', margin: '0 auto 32px' }}>
-            Six years of data tell a consistent story: authentic engagement beats manufactured
-            attention. Music crosses every border. Science builds the deepest communities.
-            And 2024 showed us that YouTube&apos;s ceiling is still rising.
+          <p className="body-text" style={{ textAlign: 'center', margin: '0 auto 16px', maxWidth: 560 }}>
+            The data tells a consistent story across 10,000 videos and six years:
           </p>
-          <a href="#cover" className="cta-btn">Back to the Beginning</a>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, maxWidth: 680, margin: '0 auto 40px', textAlign: 'left' }}>
+            {[
+              { num: '01', title: 'Find your market', body: 'Music works everywhere, but high-engagement audiences are in PH, AU, BR. Know where you want to be seen.' },
+              { num: '02', title: 'Choose your lane', body: 'Science earns the most likes. News sparks the most comments. Gaming runs longest at 25 min avg. Know what engagement your category naturally attracts.' },
+              { num: '03', title: 'Write with honesty', body: 'Clickbait scores near-zero correlation with engagement. Titles with "honest", "real", "first time" consistently outperform.' },
+            ].map(s => (
+              <div key={s.num} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, padding: 20 }}>
+                <div style={{ fontFamily: 'Georgia,serif', fontSize: 28, fontWeight: 900, color: 'var(--accent)', opacity: 0.3, marginBottom: 8 }}>{s.num}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>{s.title}</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.7 }}>{s.body}</div>
+              </div>
+            ))}
+          </div>
+          <a href="#cover" className="cta-btn">Back to the Top</a>
           <div style={{ marginTop: 48, fontSize: 11, color: 'var(--muted)', letterSpacing: 1 }}>
-            TrendScope - InfoVis Final Project - Qianyin Tan - Junjun Sun - Mingxi Xiao
+            TrendScope — InfoVis Final Project — Qianyin Tan · Junjun Sun · Mingxi Xiao
           </div>
         </section>
       </main>
