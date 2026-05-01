@@ -15,7 +15,8 @@ const CATS = [
 ]
 
 const DATA = {
-  ...BAR_DATA,
+  like:     { Music: 5.73, Entertainment: 5.51, Gaming: 5.65, Sports: 5.61, News: 5.57, Science: 5.66, Comedy: 5.63, Education: 5.68 },
+  comment:  { Music: 0.655, Entertainment: 0.672, Gaming: 0.652, Sports: 0.659, News: 0.697, Science: 0.692, Comedy: 0.646, Education: 0.653 },
   duration: { Music: 4.6, Entertainment: 12.5, Gaming: 25.6, Sports: 12.4, News: 12.2, Science: 14.7, Comedy: 13.5, Education: 14.2 },
 }
 
@@ -26,8 +27,8 @@ const LABELS = {
 }
 
 const DESCRIPTIONS = {
-  like:     'Science earns the most likes per view (6.9%), followed by Music (6.0%). News has the lowest like ratio — controversial content attracts viewers but not approval.',
-  comment:  'News triggers far more comments per view than any other category (0.9%) — audiences feel compelled to respond. Science also sparks discussion at 0.8%.',
+  like:     'Like ratios are remarkably consistent across categories (5.5–5.7%) — audiences approve at similar rates regardless of content type. Music edges ahead at 5.73%.',
+  comment:  'News generates the most comments per view (0.697%) — audiences feel compelled to respond and debate. Science follows closely at 0.692%.',
   duration: 'Gaming videos are dramatically longer than any other category — averaging 25.6 minutes vs Music at just 4.6 minutes. Format shapes who watches and for how long.',
 }
 
@@ -181,16 +182,16 @@ export default function GroupedBar() {
       <div style={{ maxWidth: 860, marginBottom: 40 }}>
         <div className="eyebrow">Chapter II - Categories</div>
         <h2 className="section-heading">
-          Science earns loyalty.<br /><em>News</em> sparks the debate.
+          Format shapes content.<br /><em>News</em> sparks the debate.
         </h2>
         <div className="rule" />
         <p className="body-text">
-          Different categories attract fundamentally different kinds of engagement.
-          Science leads on likes (6.9% per view) — audiences who watch tend to genuinely approve.
-          News leads on comments (0.9%) — people feel compelled to respond, agree, or argue.
-          And format matters too: Gaming videos average <strong>25 minutes</strong>, while
-          Music averages just <strong>4.6 minutes</strong>. The category you choose shapes
-          not just who watches, but how they engage.
+          Like ratios are surprisingly consistent across categories — audiences approve
+          at similar rates regardless of content type. But two things do diverge:
+          <strong>News generates the most comments</strong> (0.697% per view) — people watch
+          and feel the need to respond. And <strong>format varies dramatically</strong> —
+          Gaming videos average 25 minutes while Music averages just 4.6 minutes.
+          The category you choose shapes how long you need to make your content.
         </p>
         <p className="body-text" style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 500 }}>
           Switch between metrics to see how each category&apos;s profile shifts. ↓
