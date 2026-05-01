@@ -59,7 +59,7 @@ export default function Home() {
                   { num: '10K',  label: 'Trending videos analyzed', color: 'var(--accent)' },
                   { num: '23',   label: 'Countries in the dataset',  color: 'var(--red)' },
                   { num: '6',    label: 'Years of data (2020–2026)', color: 'var(--accent)' },
-                  { num: '~0',   label: 'Clickbait↔engagement r',   color: 'var(--red)' },
+                  { num: '~0',   label: 'Clickbait↔view rate r',   color: 'var(--red)' },
                 ].map(s => (
                   <div key={s.label} className="stat-card">
                     <div className="stat-num" style={{ color: s.color }}>{s.num}</div>
@@ -152,8 +152,8 @@ export default function Home() {
         <div className="ch-break reveal" id="ch3">
           <div className="ch-num">III</div>
           <div>
-            <div className="ch-text-title">Write a Better Title</div>
-            <div className="ch-text-sub">The data on what actually makes people click — and stay.</div>
+            <div className="ch-text-title">What Gets Clicked</div>
+            <div className="ch-text-sub">Real events and real names beat clickbait every time.</div>
           </div>
         </div>
         <TitleAnalysis />
@@ -175,7 +175,7 @@ export default function Home() {
             {[
               { num: '01', title: 'Find your market', body: 'Music works everywhere, but high-engagement audiences are in PH, AU, BR. Know where you want to be seen.' },
               { num: '02', title: 'Choose your lane', body: 'Science earns the most likes. News sparks the most comments. Gaming runs longest at 25 min avg. Know what engagement your category naturally attracts.' },
-              { num: '03', title: 'Write with honesty', body: 'Clickbait scores near-zero correlation with engagement. Titles with "honest", "real", "first time" consistently outperform.' },
+              { num: '03', title: 'Cover real events', body: 'Clickbait has near-zero correlation with views (r=0.007). High-view titles reference real events (World Cup, Olympics) and real people. Specificity wins.' },
             ].map(s => (
               <div key={s.num} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, padding: 20 }}>
                 <div style={{ fontFamily: 'Georgia,serif', fontSize: 28, fontWeight: 900, color: 'var(--accent)', opacity: 0.3, marginBottom: 8 }}>{s.num}</div>
