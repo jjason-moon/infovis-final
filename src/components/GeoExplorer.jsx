@@ -19,7 +19,8 @@ function getTopCatForYear(countryCode, yearIdx) {
   const data = AREA_COUNTRY[countryCode]
   if (!data) return COUNTRIES.find(c => c.code === countryCode)?.top || 'Music'
   let topCat = 'Music', topVal = -1
-  AREA_CATS.forEach(cat => {
+  // exclude 'Others' — it's a catch-all with no color in CAT_COLOR
+  AREA_CATS.filter(c => c.id !== 'Others').forEach(cat => {
     const val = (data[cat.id] || [])[yearIdx] || 0
     if (val > topVal) { topVal = val; topCat = cat.id }
   })
@@ -622,9 +623,9 @@ function GeoMap({ mode, selectedCountry, selectedCat, onCountryClick, is3D, sele
       const code = this.dataset.code
       const c    = COUNTRIES.find(x => x.code === code)
       if (!c) return
-      const color = yearIdx >= 0
-        ? (CAT_COLOR[getTopCatForYear(code, yearIdx)] || '#888')
-        : (CAT_COLOR[c.top] || '#888')
+      const topCatId = yearIdx >= 0 ? getTopCatForYear(code, yearIdx) : c.top
+      const areaCatColor = AREA_CATS.find(a => a.id === topCatId)?.color
+      const color = areaCatColor || CAT_COLOR[topCatId] || CAT_COLOR[c.top] || '#888'
       const g = d3.select(this)
       g.style('color', color)
       g.select('.bubble-circle').attr('fill', color).attr('stroke', color)
