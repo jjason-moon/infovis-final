@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import * as d3 from 'd3'
 import {
   GEO_CATS, CAT_COLOR, COUNTRIES,
-  COUNTRY_CATS, CAT_VIEWS, CAT_ENG,
+  COUNTRY_CATS, CAT_ENG,
   YEARS, AREA_CATS, AREA_GLOBAL, AREA_COUNTRY,
 } from './data'
 
@@ -99,7 +99,7 @@ function YearScrubber({ selectedYear, onChange }) {
 }
 
 // ── BarChart (right panel) ────────────────────────────────────────────
-function BarChart({ mode, selectedCountry, selectedCat, metric }) {
+function BarChart({ mode, selectedCountry, selectedCat, metric, selectedYear }) {
   const bodyRef = useRef(null)
 
   useEffect(() => {
@@ -107,45 +107,62 @@ function BarChart({ mode, selectedCountry, selectedCat, metric }) {
     if (!body) return
     body.innerHTML = ''
 
+    const yearIdx    = selectedYear !== null ? YEARS.indexOf(selectedYear) : -1
+    const useYearData = metric === 'videos' && yearIdx >= 0
+
     let items = []
 
     if (mode === 'country' && selectedCountry) {
       const c = COUNTRIES.find(x => x.code === selectedCountry)
       if (!c) return
-      const pcts = COUNTRY_CATS[c.code]
-      items = GEO_CATS.map((cat, i) => ({
-        label: cat.id, sub: null, color: cat.color,
-        pct:   pcts[i],
-        views: CAT_VIEWS[cat.id]?.[c.code] || 1500,
-        eng:   CAT_ENG[cat.id]?.[c.code]   || c.eng,
-      }))
+
+      if (useYearData) {
+        // year-specific: use AREA_CATS categories (what AREA_COUNTRY has)
+        const yearData = AREA_COUNTRY[c.code] || {}
+        items = AREA_CATS.filter(cat => cat.id !== 'Others').map(cat => ({
+          label: cat.id, sub: null, color: cat.color,
+          pct:   (yearData[cat.id] || [])[yearIdx] || 0,
+          eng:   CAT_ENG[cat.id]?.[c.code] || c.eng,
+        }))
+      } else {
+        // overall: use all GEO_CATS
+        const pcts = COUNTRY_CATS[c.code]
+        items = GEO_CATS.map((cat, i) => ({
+          label: cat.id, sub: null, color: cat.color,
+          pct:   pcts[i],
+          eng:   CAT_ENG[cat.id]?.[c.code] || c.eng,
+        }))
+      }
     } else if (mode === 'category' && selectedCat) {
-      const cat     = GEO_CATS.find(x => x.id === selectedCat)
-      const catIdx  = GEO_CATS.findIndex(x => x.id === selectedCat)
+      const cat    = GEO_CATS.find(x => x.id === selectedCat)
+      const catIdx = GEO_CATS.findIndex(x => x.id === selectedCat)
+      const catInArea = AREA_CATS.some(a => a.id === selectedCat)
+
       items = COUNTRIES.map(c => ({
         label: `${c.flag} ${c.code}`, sub: c.name, color: cat.color,
-        pct:   COUNTRY_CATS[c.code][catIdx],
-        views: CAT_VIEWS[selectedCat]?.[c.code] || c.views,
-        eng:   CAT_ENG[selectedCat]?.[c.code]   || c.eng,
+        pct:   useYearData && catInArea
+          ? ((AREA_COUNTRY[c.code]?.[selectedCat] || [])[yearIdx] || 0)
+          : COUNTRY_CATS[c.code][catIdx],
+        eng:   CAT_ENG[selectedCat]?.[c.code] || c.eng,
         isTop: c.top === selectedCat,
       }))
     } else {
       return
     }
 
-    const vals   = items.map(x => metric === 'videos' ? x.pct : metric === 'views' ? x.views : x.eng)
-    const maxVal = metric === 'engagement' ? 8.5 : Math.max(...vals)
+    const vals   = items.map(x => metric === 'videos' ? x.pct : x.eng)
+    const maxVal = metric === 'engagement' ? 8.5 : Math.max(...vals) || 1
     const sorted = items.map((it, i) => ({ ...it, val: vals[i] })).sort((a, b) => b.val - a.val)
 
     sorted.forEach((item, i) => {
-      const pct = (item.val / maxVal * 91).toFixed(1)
+      const barPct = (item.val / maxVal * 91).toFixed(1)
       const div = document.createElement('div')
       div.className = 'bar-item' + (i === 0 || item.isTop ? ' highlight' : '')
       div.style.transitionDelay = (i * 0.04) + 's'
       div.innerHTML = `
         <div class="bar-name">${item.label}${item.sub ? `<small>${item.sub}</small>` : ''}</div>
         <div class="bar-track">
-          <div class="bar-fill" style="background:${item.color}" data-pct="${pct}">
+          <div class="bar-fill" style="background:${item.color}" data-pct="${barPct}">
             <span class="bar-fill-label">${fmtVal(item.val, metric)}</span>
           </div>
         </div>
@@ -155,11 +172,11 @@ function BarChart({ mode, selectedCountry, selectedCat, metric }) {
       requestAnimationFrame(() => setTimeout(() => {
         div.classList.add('show')
         const fill = div.querySelector('.bar-fill')
-        fill.style.width = pct + '%'
+        fill.style.width = barPct + '%'
         setTimeout(() => fill.querySelector('.bar-fill-label').classList.add('show'), 600)
       }, i * 45))
     })
-  }, [mode, selectedCountry, selectedCat, metric])
+  }, [mode, selectedCountry, selectedCat, metric, selectedYear])
 
   return <div className="geo-chart-body" ref={bodyRef}>
     <div className="geo-empty">
@@ -709,9 +726,8 @@ function GeoMap({ mode, selectedCountry, selectedCat, onCountryClick, is3D, sele
 }
 
 const METRIC_DEFS = {
-  videos:     'Video %: share of a country\'s trending videos that belong to this category (e.g. 40% means 40 out of every 100 trending videos are in this category)',
-  views:      'Avg Views: average view count per trending video in this category (in thousands)',
-  engagement: 'Engagement Score: composite of likes, comments & shares relative to views — scale 0–10; global avg ≈ 7.5',
+  videos:     'Category Share: % of this country\'s trending videos in each category — updates to the selected year when a year is chosen on the scrubber above',
+  engagement: 'Engagement Score (Overall): composite of likes, comments & shares relative to views, scale 0–10 — this is a historical average across all years, not year-specific',
 }
 
 // ── Main GeoExplorer ─────────────────────────────────────────────────
@@ -742,7 +758,10 @@ export default function GeoExplorer() {
     else setSelectedCountry(null)
   }
 
-  const metricLabel = { videos: 'Video %', views: 'Avg Views', engagement: 'Engagement Score' }[metric]
+  const metricLabel = { videos: 'Category Share', engagement: 'Engagement (Overall)' }[metric]
+  const dataLabel   = metric === 'videos' && selectedYear !== null
+    ? `${selectedYear} data`
+    : 'Overall (2020–2026)'
 
   return (
     <div className="geo-app">
@@ -830,7 +849,7 @@ export default function GeoExplorer() {
             </div>
             <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 3 }}>
               {selectedCountry || selectedCat
-                ? `Category breakdown · ${metricLabel}`
+                ? <>{metricLabel} · <span style={{ color: metric === 'videos' && selectedYear ? 'var(--accent)' : 'var(--muted)' }}>{dataLabel}</span></>
                 : 'Select a bubble or legend item to begin.'}
             </div>
           </div>
@@ -838,9 +857,9 @@ export default function GeoExplorer() {
           {/* metric tabs */}
           <div className="d-flex align-items-center gap-1 px-3" style={{ borderBottom: '1px solid var(--border)', height: 38, flexShrink: 0 }}>
             <span style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginRight: 4 }}>Metric:</span>
-            {['videos', 'views', 'engagement'].map(m => (
+            {['videos', 'engagement'].map(m => (
               <button key={m} className={`metric-tab ${metric === m ? 'active' : ''}`} onClick={() => setMetric(m)}>
-                {m === 'videos' ? 'Video %' : m === 'views' ? 'Avg Views' : 'Engagement'}
+                {m === 'videos' ? 'Category Share' : 'Engagement'}
               </button>
             ))}
           </div>
@@ -850,6 +869,7 @@ export default function GeoExplorer() {
             selectedCountry={selectedCountry}
             selectedCat={selectedCat}
             metric={metric}
+            selectedYear={selectedYear}
           />
 
           {/* metric definition */}
@@ -867,6 +887,7 @@ export default function GeoExplorer() {
             <span>Mode: <span style={{ color: 'var(--accent)' }}>{mode === 'country' ? 'Country' : 'Category'}</span></span>
             <span>Selected: <span style={{ color: 'var(--accent)' }}>{selectedCountry || selectedCat || '—'}</span></span>
             <span>Metric: <span style={{ color: 'var(--accent)' }}>{metricLabel}</span></span>
+            <span>Data: <span style={{ color: 'var(--accent)' }}>{dataLabel}</span></span>
           </div>
         </div>
       </div>
