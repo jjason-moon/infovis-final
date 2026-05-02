@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
-import { BAR_DATA } from './data'
 
 const CATS = [
   { id: 'Music',         color: '#F05A7E' },
@@ -192,12 +191,10 @@ export default function GroupedBar() {
         </h2>
         <div className="rule" />
         <p className="body-text">
-          Like ratios are surprisingly consistent across categories — audiences approve
-          at similar rates regardless of content type. But two things do diverge:
-          <strong>News generates the most comments</strong> (0.697% per view) — people watch
-          and feel the need to respond. And <strong>format varies dramatically</strong> —
-          Gaming videos average 25 minutes while Music averages just 4.6 minutes.
-          The category you choose shapes how long you need to make your content.
+          Audiences like videos at roughly the same rate no matter the category.
+          But <strong>News sparks the most debate</strong> (highest comment rate),
+          and <strong>format varies wildly</strong> — a Gaming video averages 25 minutes
+          while a Music video runs just 4.6. Your category sets the rules of the game.
         </p>
         <p className="body-text" style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 500 }}>
           Switch between metrics to see how each category&apos;s profile shifts. ↓
@@ -237,6 +234,24 @@ export default function GroupedBar() {
         <p style={{ fontSize: 10, color: 'var(--muted)', fontStyle: 'italic', marginTop: 10, marginBottom: 0, opacity: 0.6, lineHeight: 1.5 }}>
           {METRIC_DEFS[metric]}
         </p>
+      </div>
+
+      {/* takeaway summary */}
+      <div style={{ marginTop: 32, padding: '20px 24px', background: 'rgba(232,240,96,0.04)', border: '1px solid rgba(232,240,96,0.18)', borderRadius: 8, borderLeft: '3px solid var(--accent)' }}>
+        <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 14 }}>What This Means for You</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {[
+            { cat: 'Music',   color: '#F05A7E', icon: '🎵', tip: 'Keep it short (avg 4.6 min). Expect high likes, low debate. Great for passive listeners who watch and move on.' },
+            { cat: 'Gaming',  color: '#50C8F0', icon: '🎮', tip: 'Go long (avg 25.6 min). Viewers are invested — they stay for the journey. Build personality and consistency.' },
+            { cat: 'News',    color: '#A078F0', icon: '📢', tip: 'Expect comments. You have the highest comment rate of any category. Post when stories break and be ready to engage.' },
+          ].map(t => (
+            <div key={t.cat} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 6, padding: '14px 16px' }}>
+              <div style={{ fontSize: 16, marginBottom: 6 }}>{t.icon}</div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: t.color, marginBottom: 6 }}>{t.cat}</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.7 }}>{t.tip}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* tooltip */}

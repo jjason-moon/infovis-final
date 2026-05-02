@@ -421,29 +421,29 @@ function SummaryCard({ countryCode }) {
         <div className="row g-2 mb-3">
           <div className="col-6">
             <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
-              <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3 }}>Engagement</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>{c.eng.toFixed(2)}</div>
-              <div style={{ fontSize: 11, color: isEngPos ? '#50F0A0' : '#F05A7E', marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>Engagement</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent)' }}>{c.eng.toFixed(2)}</div>
+              <div style={{ fontSize: 12, color: isEngPos ? '#50F0A0' : '#F05A7E', marginTop: 3 }}>
                 {engSign}{engDiff}% vs global
               </div>
             </div>
           </div>
           <div className="col-6">
             <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
-              <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3 }}>Avg Views</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>
+              <div style={{ fontSize: 12, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>Avg Views</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent)' }}>
                 {c.views >= 1000 ? (c.views / 1000).toFixed(1) + 'M' : c.views + 'K'}
               </div>
-              <div style={{ fontSize: 11, color: isViewPos ? '#50F0A0' : '#F05A7E', marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: isViewPos ? '#50F0A0' : '#F05A7E', marginTop: 3 }}>
                 {viewSign}{viewDiff}% vs global
               </div>
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8 }}>
+        <div style={{ fontSize: 15, color: 'var(--muted)', lineHeight: 2 }}>
           Top category: <strong style={{ color: topColor }}>{topCatName}</strong><br />
           Total trending videos: <strong style={{ color: 'var(--text)' }}>{c.vids.toLocaleString()}</strong><br />
-          <span style={{ opacity: 0.5, fontSize: 11 }}>↓ Area chart shows temporal trend</span>
+          <span style={{ opacity: 0.5, fontSize: 12 }}>↓ Area chart shows temporal trend</span>
         </div>
       </div>
     </div>
@@ -732,6 +732,11 @@ export default function GeoExplorer() {
             className="d-flex align-items-center flex-wrap gap-2 px-4"
             style={{ minHeight: 56, padding: '10px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)', flexShrink: 0 }}
           >
+            <div style={{ marginRight: 12, flexShrink: 0 }}>
+              <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', lineHeight: 1.2 }}>View 1</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>World Map</div>
+            </div>
+            <div style={{ width: 1, height: 28, background: 'var(--border)', flexShrink: 0, marginRight: 8 }} />
             <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--muted)', marginRight: 4 }}>
               Category →
             </span>

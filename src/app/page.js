@@ -39,18 +39,13 @@ export default function Home() {
             <div>
               <div className="eyebrow">Your Guide to Going Viral</div>
               <h2 className="section-heading">
-                So you want to be a creator.
+                Want to trend on YouTube?<br /><em>Here&apos;s what the data says.</em>
               </h2>
               <div className="rule" />
               <p className="body-text">
-                Every day, millions of videos compete for a spot on YouTube&apos;s trending tab —
-                a daily snapshot of what the world collectively decides is worth watching.
-                But what actually drives that decision? Is it the category you choose?
-                The country you target? The way you write your title?
-              </p>
-              <p className="body-text">
-                We analyzed <strong>10,000 trending videos</strong> across 23 countries and
-                6 years to find out. This is your data-driven playbook.
+                We dug through <strong>10,000 trending videos</strong> across 23 countries
+                and 6 years to find the patterns. Spoiler: it&apos;s not about clickbait.
+                It&apos;s about market, format, and covering things people actually care about.
               </p>
             </div>
             <div>
@@ -93,19 +88,11 @@ export default function Home() {
               </h2>
               <div className="rule" />
               <p className="body-text">
-                Music is the #1 trending category in <strong>14 out of 23 countries</strong> —
-                the most globally consistent content type on the platform. If you have no strong
-                preference, Music is your safest entry point.
-              </p>
-              <p className="body-text">
-                But regional patterns diverge sharply. Entertainment dominates Southeast Asia
-                and parts of Africa. People &amp; Blogs leads in Egypt and Pakistan.
-                The Philippines stands alone with the highest engagement score globally
-                at <strong>8.27</strong> — a highly active, emotionally engaged audience.
-              </p>
-              <p className="body-text">
-                Before you decide what to make, decide <em>where</em> you want to be seen.
-                Then use the map below to study that market.
+                Music tops the trending tab in <strong>14 of 23 countries</strong> — the safest
+                bet if you&apos;re starting out. But audiences differ by region: the Philippines
+                leads globally with an engagement score of <strong>8.27</strong>, Entertainment
+                rules Southeast Asia, News dominates the Middle East.
+                <strong> Pick your market first, then decide what to make.</strong>
               </p>
             </div>
             <div>
