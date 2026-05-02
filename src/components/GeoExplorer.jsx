@@ -151,11 +151,16 @@ function BarChart({ mode, selectedCountry, selectedCat, metric, selectedYear }) 
     }
 
     const vals   = items.map(x => metric === 'videos' ? x.pct : x.eng)
-    const maxVal = metric === 'engagement' ? 8.5 : Math.max(...vals) || 1
+    const rawMax = Math.max(...vals) || 1
+    const rawMin = Math.min(...vals)
+    const spread = rawMax - rawMin || 0.1
+    // for engagement, zoom into actual data range so small differences are visible
+    const minVal = metric === 'engagement' ? Math.max(0, rawMin - spread * 0.6) : 0
+    const maxVal = metric === 'engagement' ? rawMax + spread * 0.1 : rawMax
     const sorted = items.map((it, i) => ({ ...it, val: vals[i] })).sort((a, b) => b.val - a.val)
 
     sorted.forEach((item, i) => {
-      const barPct = (item.val / maxVal * 91).toFixed(1)
+      const barPct = ((item.val - minVal) / (maxVal - minVal) * 91).toFixed(1)
       const div = document.createElement('div')
       div.className = 'bar-item' + (i === 0 || item.isTop ? ' highlight' : '')
       div.style.transitionDelay = (i * 0.04) + 's'
@@ -188,7 +193,7 @@ function BarChart({ mode, selectedCountry, selectedCat, metric, selectedYear }) 
 
 
 // ── AreaChart (bottom left) ───────────────────────────────────────────
-function AreaChart({ countryCode, highlightCat, selectedYear }) {
+function AreaChart({ countryCode, highlightCat, selectedYear, onYearChange }) {
   const svgRef            = useRef(null)
   const tipRef            = useRef(null)
   const [flash, setFlash] = useState(false)
@@ -406,7 +411,43 @@ function AreaChart({ countryCode, highlightCat, selectedYear }) {
 }
 
 // ── SummaryCard ───────────────────────────────────────────────────────
-function SummaryCard({ countryCode }) {
+function SummaryCard({ countryCode, mode, selectedCat }) {
+  // category mode — show top countries by engagement for this category
+  if (mode === 'category' && selectedCat && !countryCode) {
+    const catColor = CAT_COLOR[selectedCat] || 'var(--accent)'
+    const topCountries = COUNTRIES
+      .filter(c => CAT_ENG[selectedCat]?.[c.code] != null)
+      .sort((a, b) => (CAT_ENG[selectedCat][b.code] || 0) - (CAT_ENG[selectedCat][a.code] || 0))
+      .slice(0, 8)
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 18px 8px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)', flexShrink: 0, borderLeft: `3px solid ${catColor}` }}>
+          <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: catColor }}>Category</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: catColor }}>{selectedCat}</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Top countries by engagement</div>
+        </div>
+        <div style={{ flex: 1, padding: '14px 18px', overflowY: 'auto' }}>
+          {topCountries.map((c, i) => {
+            const eng = CAT_ENG[selectedCat][c.code]
+            return (
+              <div key={c.code} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: 'var(--muted)', width: 18, flexShrink: 0 }}>#{i + 1}</div>
+                <div style={{ fontSize: 16, lineHeight: 1 }}>{c.flag}</div>
+                <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{c.name}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: catColor }}>{eng.toFixed(2)}</div>
+              </div>
+            )
+          })}
+        </div>
+        <div style={{ padding: '8px 18px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          <p style={{ fontSize: 10, color: 'var(--muted)', fontStyle: 'italic', margin: 0, opacity: 0.6, lineHeight: 1.5 }}>
+            Click a country bubble on the map to switch to country view.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (!countryCode) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -416,7 +457,7 @@ function SummaryCard({ countryCode }) {
         </div>
         <div style={{ flex: 1, padding: '16px 18px' }}>
           <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7 }}>
-            Click a country on the map to see engagement, views, and category details.
+            Click a country on the map to see engagement, views, and category details. Or pick a category from the legend below the map.
           </p>
         </div>
       </div>
@@ -725,17 +766,13 @@ function GeoMap({ mode, selectedCountry, selectedCat, onCountryClick, is3D, sele
   )
 }
 
-const METRIC_DEFS = {
-  videos:     'Category Share: % of this country\'s trending videos in each category — updates to the selected year when a year is chosen on the scrubber above',
-  engagement: 'Engagement Score (Overall): composite of likes, comments & shares relative to views, scale 0–10 — this is a historical average across all years, not year-specific',
-}
+const ENG_DEF = 'Engagement Score: composite of likes, comments & shares relative to views, scale 0–10 — all-time average across 2020–2026 (not year-specific)'
 
 // ── Main GeoExplorer ─────────────────────────────────────────────────
 export default function GeoExplorer() {
   const [mode,            setMode]            = useState('country')
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedCat,     setSelectedCat]     = useState(null)
-  const [metric,          setMetric]          = useState('videos')
   const [highlightCat] = useState(null)
   const [is3D,            setIs3D]            = useState(false)
   const [selectedYear,    setSelectedYear]    = useState(null)
@@ -758,22 +795,17 @@ export default function GeoExplorer() {
     else setSelectedCountry(null)
   }
 
-  const metricLabel = { videos: 'Category Share', engagement: 'Engagement (Overall)' }[metric]
-  const dataLabel   = metric === 'videos' && selectedYear !== null
-    ? `${selectedYear} data`
-    : 'Overall (2020–2026)'
-
   return (
     <div className="geo-app">
 
-      {/* ── TOP ROW ── */}
+      {/* ── VIEW 1: GeoMap + AreaChart (both respond to country click & year scrubber) ── */}
       <div className="geo-top-row">
 
         {/* map panel */}
         <div className="geo-map-panel">
-          {/* toolbar */}
+          {/* toolbar — category pills moved below map */}
           <div
-            className="d-flex align-items-center flex-wrap gap-2 px-4"
+            className="d-flex align-items-center gap-2 px-4"
             style={{ minHeight: 56, padding: '10px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)', flexShrink: 0 }}
           >
             <div style={{ marginRight: 12, flexShrink: 0 }}>
@@ -781,23 +813,9 @@ export default function GeoExplorer() {
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>World Map</div>
             </div>
             <div style={{ width: 1, height: 28, background: 'var(--border)', flexShrink: 0, marginRight: 8 }} />
-            <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--muted)', marginRight: 4 }}>
-              Category →
-            </span>
-            {GEO_CATS.map(cat => (
-              <div
-                key={cat.id}
-                className={`legend-pill ${selectedCat === cat.id ? 'selected' : ''}`}
-                style={{ color: cat.color }}
-                onClick={() => handleLegendClick(cat.id)}
-              >
-                <div className="legend-dot" style={{ background: cat.color }} />
-                {cat.id}
-              </div>
-            ))}
 
             {/* mode toggle */}
-            <div className="geo-mode-toggle ms-auto">
+            <div className="geo-mode-toggle">
               <button
                 className={`geo-mode-btn ${mode === 'country' ? 'active' : ''}`}
                 onClick={() => handleModeToggle('country')}
@@ -831,76 +849,82 @@ export default function GeoExplorer() {
             is3D={is3D}
             selectedYear={selectedYear}
           />
+
+          {/* category pills — below map for spatial clarity */}
+          <div className="geo-cat-bar">
+            <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--muted)', flexShrink: 0 }}>Category</span>
+            {GEO_CATS.map(cat => (
+              <div
+                key={cat.id}
+                className={`legend-pill ${selectedCat === cat.id ? 'selected' : ''}`}
+                style={{ color: cat.color }}
+                onClick={() => handleLegendClick(cat.id)}
+              >
+                <div className="legend-dot" style={{ background: cat.color }} />
+                {cat.id}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* bar chart panel */}
+        {/* area chart — temporal trend for selected country, highlights selected year */}
+        <AreaChart
+          countryCode={selectedCountry}
+          highlightCat={highlightCat}
+          selectedYear={selectedYear}
+        />
+      </div>
+
+      {/* ── VIEW 2: Engagement Ranking + Summary ── */}
+      <div className="geo-bottom-row">
+
+        {/* engagement ranking bar chart */}
         <div className="geo-chart-panel">
-          {/* header */}
           <div style={{ padding: '14px 18px 10px', borderBottom: '1px solid var(--border)', flexShrink: 0, background: 'var(--surface2)' }}>
             <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
-              {mode === 'country' ? 'Country View' : 'Category View'}
+              View 2 · {mode === 'country' ? 'Country View' : 'Category View'}
             </div>
             <div style={{ fontWeight: 700, fontSize: 16 }}>
               {mode === 'country' && selectedCountry
                 ? `${COUNTRIES.find(c => c.code === selectedCountry)?.flag} ${COUNTRIES.find(c => c.code === selectedCountry)?.name}`
                 : mode === 'category' && selectedCat
                 ? `${selectedCat} — Global Comparison`
-                : 'Explore the Data'}
+                : 'Engagement Ranking'}
             </div>
             <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 3 }}>
               {selectedCountry || selectedCat
-                ? <>{metricLabel} · <span style={{ color: metric === 'videos' && selectedYear ? 'var(--accent)' : 'var(--muted)' }}>{dataLabel}</span></>
-                : 'Select a bubble or legend item to begin.'}
+                ? 'Engagement Score · All-time average'
+                : 'Select a bubble or category to explore.'}
             </div>
-          </div>
-
-          {/* metric tabs */}
-          <div className="d-flex align-items-center gap-1 px-3" style={{ borderBottom: '1px solid var(--border)', height: 38, flexShrink: 0 }}>
-            <span style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginRight: 4 }}>Metric:</span>
-            {['videos', 'engagement'].map(m => (
-              <button key={m} className={`metric-tab ${metric === m ? 'active' : ''}`} onClick={() => setMetric(m)}>
-                {m === 'videos' ? 'Category Share' : 'Engagement'}
-              </button>
-            ))}
           </div>
 
           <BarChart
             mode={mode}
             selectedCountry={selectedCountry}
             selectedCat={selectedCat}
-            metric={metric}
-            selectedYear={selectedYear}
+            metric="engagement"
+            selectedYear={null}
           />
 
-          {/* metric definition */}
           <div style={{ padding: '8px 18px 12px', flexShrink: 0, borderTop: '1px solid var(--border)' }}>
             <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', margin: 0, lineHeight: 1.6, opacity: 0.7 }}>
-              {METRIC_DEFS[metric]}
+              {ENG_DEF}
             </p>
           </div>
 
-          {/* status bar */}
           <div
             className="d-flex justify-content-between px-3"
             style={{ height: 30, borderTop: '1px solid var(--border)', flexShrink: 0, background: 'var(--surface2)', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', alignItems: 'center' }}
           >
             <span>Mode: <span style={{ color: 'var(--accent)' }}>{mode === 'country' ? 'Country' : 'Category'}</span></span>
             <span>Selected: <span style={{ color: 'var(--accent)' }}>{selectedCountry || selectedCat || '—'}</span></span>
-            <span>Metric: <span style={{ color: 'var(--accent)' }}>{metricLabel}</span></span>
-            <span>Data: <span style={{ color: 'var(--accent)' }}>{dataLabel}</span></span>
+            <span>Metric: <span style={{ color: 'var(--accent)' }}>Engagement</span></span>
+            <span>Data: <span style={{ color: 'var(--accent)' }}>All-time</span></span>
           </div>
         </div>
-      </div>
 
-      {/* ── BOTTOM ROW ── */}
-      <div className="geo-bottom-row">
-        <AreaChart
-          countryCode={selectedCountry}
-          highlightCat={highlightCat}
-          selectedYear={selectedYear}
-        />
-
-        <SummaryCard countryCode={selectedCountry} />
+        {/* summary card */}
+        <SummaryCard countryCode={selectedCountry} mode={mode} selectedCat={selectedCat} />
       </div>
     </div>
   )
