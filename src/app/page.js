@@ -174,7 +174,7 @@ export default function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, maxWidth: 680, margin: '0 auto 40px', textAlign: 'left' }}>
             {[
               { num: '01', title: 'Find your market', body: 'Music works everywhere, but high-engagement audiences are in PH, AU, BR. Know where you want to be seen.' },
-              { num: '02', title: 'Choose your lane', body: 'Science earns the most likes. News sparks the most comments. Gaming runs longest at 25 min avg. Know what engagement your category naturally attracts.' },
+              { num: '02', title: 'Choose your lane', body: 'Music earns the most likes. News sparks the most comments. Gaming runs longest at 25 min avg. Know what engagement your category naturally attracts.' },
               { num: '03', title: 'Cover real events', body: 'Clickbait has near-zero correlation with views (r=0.007). High-view titles reference real events (World Cup, Olympics) and real people. Specificity wins.' },
             ].map(s => (
               <div key={s.num} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, padding: 20 }}>

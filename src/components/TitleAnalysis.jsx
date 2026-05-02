@@ -199,15 +199,15 @@ function ScatterPlot({ onBrush }) {
       .attr('points', `${L+PW-6},${T+PH-4} ${L+PW-6},${T+PH+4} ${L+PW},${T+PH}`)
       .attr('fill', axisColor)
     // y axis tick labels
-    dotSvg.append('text').attr('x', L-6).attr('y', T+8)
-      .attr('text-anchor','end').attr('font-size',9).attr('fill',axisColor).text('10M')
+    dotSvg.append('text').attr('x', L-6).attr('y', T+10)
+      .attr('text-anchor','end').attr('font-size',11).attr('fill',axisColor).text('10M')
     dotSvg.append('text').attr('x', L-6).attr('y', T+PH)
-      .attr('text-anchor','end').attr('font-size',9).attr('fill',axisColor).text('10K')
+      .attr('text-anchor','end').attr('font-size',11).attr('fill',axisColor).text('10K')
     // x axis tick labels
-    dotSvg.append('text').attr('x', L).attr('y', T+PH+14)
-      .attr('text-anchor','middle').attr('font-size',9).attr('fill',axisColor).text('0')
-    dotSvg.append('text').attr('x', L+PW).attr('y', T+PH+14)
-      .attr('text-anchor','middle').attr('font-size',9).attr('fill',axisColor).text('1')
+    dotSvg.append('text').attr('x', L).attr('y', T+PH+16)
+      .attr('text-anchor','middle').attr('font-size',11).attr('fill',axisColor).text('0')
+    dotSvg.append('text').attr('x', L+PW).attr('y', T+PH+16)
+      .attr('text-anchor','middle').attr('font-size',11).attr('fill',axisColor).text('1')
 
     const dotEls = []
 
@@ -291,18 +291,20 @@ function ScatterPlot({ onBrush }) {
 
       // collect categories of brushed points -> highlight matching keywords
       const brushedCats = new Set(brushed.map(({ d }) => d.cat))
-      // map categories to relevant keywords
+      // map categories to actual KW_WORDS entries
       const catKeywords = {
-        Music:         ['viral','honest','emotional','real','truth'],
-        Gaming:        ['reaction','challenge','gone wrong','first time','world record'],
-        Sports:        ['world record','best ever','challenge','unbelievable','honest'],
-        News:          ['truth','exposed','inside','secret','never seen'],
-        Science:       ['inside','world record','best ever','first time','unbelievable'],
-        Comedy:        ['gone wrong','challenge','reaction','I tried','never seen'],
-        Education:     ['inside','first time','real','best ever','honest'],
-        Entertainment: ['exposed','secret','never seen','viral','reaction'],
-        People:        ['honest','real','I tried','first time','emotional'],
-        Film:          ['behind the scenes','real','viral','honest','emotional'],
+        Sports:              ['highlights', 'football', 'world cup', 'olympics', 'mma', 'nba finals', 'super bowl'],
+        Gaming:              ['highlights', 'palworld', 'ishowspeed', 'valorant', 'weapons'],
+        News:                ['breaking', 'coverage', 'weapons', 'olympics'],
+        Science:             ['quantum', 'computing', 'black holes'],
+        'Science & Technology': ['quantum', 'computing', 'black holes'],
+        Music:               ['nicki minaj'],
+        Entertainment:       ['ishowspeed', 'emma chamberlain'],
+        'People & Blogs':    ['emma chamberlain'],
+        People:              ['emma chamberlain'],
+        Comedy:              ['ishowspeed', 'highlights'],
+        Education:           ['quantum', 'computing', 'black holes'],
+        Film:                ['highlights'],
       }
       const keyFreq = {}
       brushedCats.forEach(cat => {
@@ -358,6 +360,12 @@ function ScatterPlot({ onBrush }) {
       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, fontStyle: 'italic', opacity: 0.7 }}>
         Drag to select a cluster · double-click to reset
       </div>
+      <div style={{ marginTop: 10, padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6, borderLeft: '2px solid rgba(232,232,240,0.15)' }}>
+        <p style={{ fontSize: 10, color: 'var(--muted)', margin: 0, lineHeight: 1.7, opacity: 0.75 }}>
+          <strong style={{ color: 'rgba(232,232,240,0.5)', fontStyle: 'normal' }}>X-axis — Clickbait Score:</strong> 0 = neutral / descriptive title; 1 = highly sensational phrasing (e.g. "YOU WON'T BELIEVE…")<br />
+          <strong style={{ color: 'rgba(232,232,240,0.5)', fontStyle: 'normal' }}>Y-axis — Views (log scale):</strong> 10K at bottom, 10M at top; log scale used so low- and high-view videos are both visible
+        </p>
+      </div>
     </div>
   )
 }
@@ -373,7 +381,7 @@ export default function TitleAnalysis() {
   }, [])
 
   return (
-    <section className="narrative reveal" id="ch4-content" style={{ paddingTop: 64, paddingBottom: 64 }}>
+    <section className="narrative reveal" id="ch3-content" style={{ paddingTop: 64, paddingBottom: 64 }}>
       {/* text intro */}
       <div style={{ maxWidth: 860, marginBottom: 40 }}>
         <div className="eyebrow">Chapter III - Title Analysis</div>
@@ -431,6 +439,13 @@ export default function TitleAnalysis() {
               </span>
             </div>
             <WordCloud keyFilter={keyFilter} />
+            <div style={{ marginTop: 10, padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6, borderLeft: '2px solid rgba(232,232,240,0.15)' }}>
+              <p style={{ fontSize: 10, color: 'var(--muted)', margin: 0, lineHeight: 1.7, opacity: 0.75 }}>
+                <strong style={{ color: 'rgba(232,232,240,0.5)' }}>Word size</strong> = frequency in high-view titles<br />
+                <strong style={{ color: 'rgba(232,232,240,0.5)' }}>Avg Engagement</strong> = composite score (0–10) combining likes, comments &amp; shares relative to views<br />
+                Hover a word for details · drag scatter to filter by view range
+              </p>
+            </div>
           </div>
         </div>
       </div>

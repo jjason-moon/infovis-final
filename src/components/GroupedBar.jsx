@@ -32,6 +32,12 @@ const DESCRIPTIONS = {
   duration: 'Gaming videos are dramatically longer than any other category — averaging 25.6 minutes vs Music at just 4.6 minutes. Format shapes who watches and for how long.',
 }
 
+const METRIC_DEFS = {
+  like:     'Like / View Ratio: (total likes ÷ total views) × 100 — measures how likely a viewer is to like the video after watching it',
+  comment:  'Comment / View Ratio: (total comments ÷ total views) × 100 — measures how likely a viewer is to leave a comment; higher = more discussion',
+  duration: 'Avg Video Duration: mean length of trending videos in this category (minutes); longer = more watch time commitment required',
+}
+
 export default function GroupedBar() {
   const svgRef  = useRef(null)
   const wrapRef = useRef(null)
@@ -84,7 +90,7 @@ export default function GroupedBar() {
       g.append('text')
         .attr('x', -8).attr('y', y(v))
         .attr('text-anchor', 'end').attr('dominant-baseline', 'central')
-        .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.35)')
+        .attr('font-size', 11).attr('fill', 'rgba(232,232,240,0.35)')
         .text(v.toFixed(1))
     })
 
@@ -97,9 +103,9 @@ export default function GroupedBar() {
     // y-axis label
     g.append('text')
       .attr('transform', `rotate(-90)`)
-      .attr('x', -PH / 2).attr('y', -ML + 10)
+      .attr('x', -PH / 2).attr('y', -ML + 12)
       .attr('text-anchor', 'middle')
-      .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.3)')
+      .attr('font-size', 11).attr('fill', 'rgba(232,232,240,0.3)')
       .text(LABELS[m])
 
     sorted.forEach((cat, i) => {
@@ -133,15 +139,15 @@ export default function GroupedBar() {
       g.append('text')
         .attr('x', bx + bw / 2).attr('y', y(cat.val) - 5)
         .attr('text-anchor', 'middle')
-        .attr('font-size', 10).attr('font-weight', '700')
+        .attr('font-size', 12).attr('font-weight', '700')
         .attr('fill', cat.color)
         .text(cat.val.toFixed(1))
 
       // x label
       g.append('text')
-        .attr('x', bx + bw / 2).attr('y', PH + 14)
+        .attr('x', bx + bw / 2).attr('y', PH + 16)
         .attr('text-anchor', 'middle')
-        .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.5)')
+        .attr('font-size', 11).attr('fill', 'rgba(232,232,240,0.5)')
         .text(cat.id)
 
       // hover area
@@ -226,6 +232,11 @@ export default function GroupedBar() {
         <div ref={wrapRef} style={{ width: '100%' }}>
           <svg ref={svgRef} style={{ display: 'block', overflow: 'visible' }} />
         </div>
+
+        {/* metric definition footnote */}
+        <p style={{ fontSize: 10, color: 'var(--muted)', fontStyle: 'italic', marginTop: 10, marginBottom: 0, opacity: 0.6, lineHeight: 1.5 }}>
+          {METRIC_DEFS[metric]}
+        </p>
       </div>
 
       {/* tooltip */}

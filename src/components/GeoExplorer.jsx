@@ -213,7 +213,7 @@ function AreaChart({ countryCode, highlightCat }) {
       g.append('text')
         .attr('x', -4).attr('y', y(v))
         .attr('text-anchor', 'end').attr('dominant-baseline', 'central')
-        .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.3)')
+        .attr('font-size', 11).attr('fill', 'rgba(232,232,240,0.3)')
         .text(v + '%')
     })
 
@@ -271,7 +271,7 @@ function AreaChart({ countryCode, highlightCat }) {
     sliced.forEach(yr => {
       xAxis.append('text')
         .attr('x', x(yr)).attr('y', 14).attr('text-anchor', 'middle')
-        .attr('font-size', 9).attr('fill', 'rgba(232,232,240,0.4)').text(yr)
+        .attr('font-size', 11).attr('fill', 'rgba(232,232,240,0.4)').text(yr)
     })
   }, [countryCode, highlightCat, lo, hi])
 
@@ -359,7 +359,7 @@ function AreaChart({ countryCode, highlightCat }) {
       {/* legend */}
       <div className="d-flex flex-wrap gap-2 px-3 pt-2" style={{ flexShrink: 0 }}>
         {AREA_CATS.map(cat => (
-          <div key={cat.id} className="d-flex align-items-center gap-1" style={{ fontSize: 11, color: 'var(--muted)' }}>
+          <div key={cat.id} className="d-flex align-items-center gap-1" style={{ fontSize: 12, color: 'var(--muted)' }}>
             <div style={{ width: 8, height: 8, borderRadius: 2, background: cat.color, flexShrink: 0 }} />
             {cat.id}
           </div>
@@ -369,6 +369,13 @@ function AreaChart({ countryCode, highlightCat }) {
       {/* chart */}
       <div style={{ flex: 1, padding: '8px 12px', overflow: 'hidden', position: 'relative' }}>
         <svg ref={svgRef} style={{ width: '100%', height: '100%', overflow: 'visible', display: 'block' }} />
+      </div>
+
+      {/* footnote */}
+      <div style={{ padding: '4px 14px 8px', flexShrink: 0, borderTop: '1px solid var(--border)' }}>
+        <p style={{ fontSize: 10, color: 'var(--muted)', fontStyle: 'italic', margin: 0, opacity: 0.6, lineHeight: 1.5 }}>
+          Y-axis: Video % — share of trending videos in each category for the selected country (or global if none selected)
+        </p>
       </div>
     </div>
   )
@@ -380,11 +387,11 @@ function SummaryCard({ countryCode }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '12px 18px 8px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)', flexShrink: 0 }}>
-          <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)' }}>Summary</div>
+          <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)' }}>Summary</div>
           <div style={{ fontWeight: 700, fontSize: 13 }}>No country selected</div>
         </div>
         <div style={{ flex: 1, padding: '16px 18px' }}>
-          <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.7 }}>
+          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7 }}>
             Click a country on the map to see engagement, views, and category details.
           </p>
         </div>
@@ -414,29 +421,29 @@ function SummaryCard({ countryCode }) {
         <div className="row g-2 mb-3">
           <div className="col-6">
             <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
-              <div style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3 }}>Engagement</div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3 }}>Engagement</div>
               <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>{c.eng.toFixed(2)}</div>
-              <div style={{ fontSize: 10, color: isEngPos ? '#50F0A0' : '#F05A7E', marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: isEngPos ? '#50F0A0' : '#F05A7E', marginTop: 2 }}>
                 {engSign}{engDiff}% vs global
               </div>
             </div>
           </div>
           <div className="col-6">
             <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
-              <div style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3 }}>Avg Views</div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 3 }}>Avg Views</div>
               <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>
                 {c.views >= 1000 ? (c.views / 1000).toFixed(1) + 'M' : c.views + 'K'}
               </div>
-              <div style={{ fontSize: 10, color: isViewPos ? '#50F0A0' : '#F05A7E', marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: isViewPos ? '#50F0A0' : '#F05A7E', marginTop: 2 }}>
                 {viewSign}{viewDiff}% vs global
               </div>
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
+        <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8 }}>
           Top category: <strong style={{ color: topColor }}>{topCatName}</strong><br />
           Total trending videos: <strong style={{ color: 'var(--text)' }}>{c.vids.toLocaleString()}</strong><br />
-          <span style={{ opacity: 0.5, fontSize: 10 }}>↓ Area chart shows temporal trend</span>
+          <span style={{ opacity: 0.5, fontSize: 11 }}>↓ Area chart shows temporal trend</span>
         </div>
       </div>
     </div>
@@ -677,6 +684,12 @@ function GeoMap({ mode, selectedCountry, selectedCat, onCountryClick, is3D }) {
   )
 }
 
+const METRIC_DEFS = {
+  videos:     'Video %: share of a country\'s trending videos that belong to this category (e.g. 40% means 40 out of every 100 trending videos are in this category)',
+  views:      'Avg Views: average view count per trending video in this category (in thousands)',
+  engagement: 'Engagement Score: composite of likes, comments & shares relative to views — scale 0–10; global avg ≈ 7.5',
+}
+
 // ── Main GeoExplorer ─────────────────────────────────────────────────
 export default function GeoExplorer() {
   const [mode,            setMode]            = useState('country')
@@ -716,8 +729,8 @@ export default function GeoExplorer() {
         <div className="geo-map-panel">
           {/* toolbar */}
           <div
-            className="d-flex align-items-center flex-wrap gap-1 px-3"
-            style={{ minHeight: 40, borderBottom: '1px solid var(--border)', background: 'var(--surface2)', flexShrink: 0 }}
+            className="d-flex align-items-center flex-wrap gap-2 px-4"
+            style={{ minHeight: 56, padding: '10px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)', flexShrink: 0 }}
           >
             <span style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--muted)', marginRight: 4 }}>
               Category →
@@ -772,17 +785,17 @@ export default function GeoExplorer() {
         <div className="geo-chart-panel">
           {/* header */}
           <div style={{ padding: '14px 18px 10px', borderBottom: '1px solid var(--border)', flexShrink: 0, background: 'var(--surface2)' }}>
-            <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
+            <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
               {mode === 'country' ? 'Country View' : 'Category View'}
             </div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>
               {mode === 'country' && selectedCountry
                 ? `${COUNTRIES.find(c => c.code === selectedCountry)?.flag} ${COUNTRIES.find(c => c.code === selectedCountry)?.name}`
                 : mode === 'category' && selectedCat
                 ? `${selectedCat} — Global Comparison`
                 : 'Explore the Data'}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 3 }}>
               {selectedCountry || selectedCat
                 ? `Category breakdown · ${metricLabel}`
                 : 'Select a bubble or legend item to begin.'}
@@ -791,7 +804,7 @@ export default function GeoExplorer() {
 
           {/* metric tabs */}
           <div className="d-flex align-items-center gap-1 px-3" style={{ borderBottom: '1px solid var(--border)', height: 38, flexShrink: 0 }}>
-            <span style={{ fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginRight: 4 }}>Metric:</span>
+            <span style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', marginRight: 4 }}>Metric:</span>
             {['videos', 'views', 'engagement'].map(m => (
               <button key={m} className={`metric-tab ${metric === m ? 'active' : ''}`} onClick={() => setMetric(m)}>
                 {m === 'videos' ? 'Video %' : m === 'views' ? 'Avg Views' : 'Engagement'}
@@ -806,10 +819,17 @@ export default function GeoExplorer() {
             metric={metric}
           />
 
+          {/* metric definition */}
+          <div style={{ padding: '8px 18px 12px', flexShrink: 0, borderTop: '1px solid var(--border)' }}>
+            <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', margin: 0, lineHeight: 1.6, opacity: 0.7 }}>
+              {METRIC_DEFS[metric]}
+            </p>
+          </div>
+
           {/* status bar */}
           <div
             className="d-flex justify-content-between px-3"
-            style={{ height: 28, borderTop: '1px solid var(--border)', flexShrink: 0, background: 'var(--surface2)', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', alignItems: 'center' }}
+            style={{ height: 30, borderTop: '1px solid var(--border)', flexShrink: 0, background: 'var(--surface2)', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--muted)', alignItems: 'center' }}
           >
             <span>Mode: <span style={{ color: 'var(--accent)' }}>{mode === 'country' ? 'Country' : 'Category'}</span></span>
             <span>Selected: <span style={{ color: 'var(--accent)' }}>{selectedCountry || selectedCat || '—'}</span></span>
