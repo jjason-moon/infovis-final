@@ -200,16 +200,24 @@ function ScatterPlot({ onBrush }) {
       .attr('fill', axisColor)
     // y axis tick labels
     dotSvg.append('text').attr('x', L-6).attr('y', T+10)
-      .attr('text-anchor','end').attr('font-size',11).attr('fill',axisColor).text('10M')
+      .attr('text-anchor','end').attr('font-size',11).attr('fill',axisColor).text('10M views')
+    dotSvg.append('text').attr('x', L-6).attr('y', T+PH/2+4)
+      .attr('text-anchor','end').attr('font-size',10).attr('fill',axisColor).text('300K')
     dotSvg.append('text').attr('x', L-6).attr('y', T+PH)
-      .attr('text-anchor','end').attr('font-size',11).attr('fill',axisColor).text('10K')
-    // x axis tick labels
-    dotSvg.append('text').attr('x', L).attr('y', T+PH+16)
-      .attr('text-anchor','middle').attr('font-size',11).attr('fill',axisColor).text('0')
-    dotSvg.append('text').attr('x', L+PW).attr('y', T+PH+16)
-      .attr('text-anchor','middle').attr('font-size',11).attr('fill',axisColor).text('1')
+      .attr('text-anchor','end').attr('font-size',11).attr('fill',axisColor).text('10K views')
+    // y grid mid line
+    dotSvg.append('line')
+      .attr('x1', L).attr('x2', L+PW).attr('y1', T+PH/2).attr('y2', T+PH/2)
+      .attr('stroke', axisColor).attr('stroke-width', 0.4).attr('stroke-dasharray', '3 4')
+    // x axis tick labels — show meaning not raw numbers
+    dotSvg.append('text').attr('x', L).attr('y', T+PH+18)
+      .attr('text-anchor','start').attr('font-size',11).attr('fill',axisColor).text('← Neutral')
+    dotSvg.append('text').attr('x', L+PW).attr('y', T+PH+18)
+      .attr('text-anchor','end').attr('font-size',11).attr('fill',axisColor).text('Clickbait →')
 
     const dotEls = []
+
+    const BASE_COLOR = '#E8E8F0'  // single neutral color for all dots
 
     SCATTER_DOTS.forEach((d, i) => {
       const x  = L + d.cb * PW
@@ -218,22 +226,26 @@ function ScatterPlot({ onBrush }) {
 
       const circle = dotSvg.append('circle')
         .attr('cx', x).attr('cy', y).attr('r', r)
-        .attr('fill', d.color).attr('opacity', 0)
-        .style('transition', `opacity .4s ${i * 0.03}s, stroke .15s`)
+        .attr('fill', BASE_COLOR).attr('opacity', 0)
+        .style('transition', `opacity .4s ${i * 0.03}s, fill .15s, stroke .15s`)
         .attr('stroke', 'none').attr('stroke-width', 1.5)
 
-      setTimeout(() => circle.attr('opacity', 0.72), 100 + i * 30)
+      setTimeout(() => circle.attr('opacity', 0.35), 100 + i * 30)
 
       circle
         .on('mouseenter', function () {
+          d3.select(this).attr('fill', d.color).attr('opacity', 1).attr('r', 7)
           const tip = tipRef.current
           if (!tip) return
-          tip.textContent  = `${d.cat} · Clickbait:${d.cb.toFixed(2)} · Views:${d.views}`
-          tip.style.left   = (x + 10) + 'px'
-          tip.style.top    = (y - 16) + 'px'
+          tip.innerHTML = `<span style="color:${d.color};font-weight:600">${d.cat}</span> &nbsp;·&nbsp; Clickbait: ${d.cb.toFixed(2)} &nbsp;·&nbsp; Views: ${d.views}`
+          tip.style.left    = (x + 10) + 'px'
+          tip.style.top     = (y - 16) + 'px'
           tip.style.opacity = '1'
         })
-        .on('mouseleave', () => { if (tipRef.current) tipRef.current.style.opacity = '0' })
+        .on('mouseleave', function () {
+          d3.select(this).attr('fill', BASE_COLOR).attr('opacity', 0.35).attr('r', r)
+          if (tipRef.current) tipRef.current.style.opacity = '0'
+        })
 
       dotEls.push({ circle, d, x, y })
     })
@@ -283,10 +295,12 @@ function ScatterPlot({ onBrush }) {
       const brushed = dotEls.filter(({ x, y }) => x >= x1 && x <= x2 && y >= y1 && y <= y2)
 
       // dim/highlight dots
-      dotEls.forEach(({ circle, x, y }) => {
+      dotEls.forEach(({ circle, d, x, y }) => {
         const inBrush = x >= x1 && x <= x2 && y >= y1 && y <= y2
-        circle.attr('opacity', inBrush ? 1 : 0.08)
-          .attr('stroke', inBrush ? 'white' : 'none')
+        circle
+          .attr('fill', inBrush ? d.color : BASE_COLOR)
+          .attr('opacity', inBrush ? 0.9 : 0.08)
+          .attr('stroke', inBrush ? 'rgba(255,255,255,0.4)' : 'none')
       })
 
       // collect categories of brushed points -> highlight matching keywords
@@ -320,7 +334,7 @@ function ScatterPlot({ onBrush }) {
     function clearBrush() {
       brushRect.attr('display', 'none')
       brushStart = null
-      dotEls.forEach(({ circle }) => circle.attr('opacity', 0.72).attr('stroke', 'none'))
+      dotEls.forEach(({ circle }) => circle.attr('fill', BASE_COLOR).attr('opacity', 0.35).attr('stroke', 'none'))
       onBrush(null, 0)
     }
 
@@ -337,8 +351,8 @@ function ScatterPlot({ onBrush }) {
       <div className="scatter-wrap" ref={wrapRef}>
         <div className="scatter-axis-x" />
         <div className="scatter-axis-y" />
-        <div className="s-lx">Clickbait Score →</div>
-        <div className="s-ly">Views (log scale)</div>
+        <div className="s-lx">Title Sensationalism Score</div>
+        <div className="s-ly">Views</div>
         <div className="s-insight">r = 0.007<br />Near-zero correlation</div>
         <div
           ref={tipRef}
@@ -362,8 +376,8 @@ function ScatterPlot({ onBrush }) {
       </div>
       <div style={{ marginTop: 10, padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6, borderLeft: '2px solid rgba(232,232,240,0.15)' }}>
         <p style={{ fontSize: 10, color: 'var(--muted)', margin: 0, lineHeight: 1.7, opacity: 0.75 }}>
-          <strong style={{ color: 'rgba(232,232,240,0.5)', fontStyle: 'normal' }}>X-axis — Clickbait Score:</strong> 0 = neutral / descriptive title; 1 = highly sensational phrasing (e.g. "YOU WON'T BELIEVE…")<br />
-          <strong style={{ color: 'rgba(232,232,240,0.5)', fontStyle: 'normal' }}>Y-axis — Views (log scale):</strong> 10K at bottom, 10M at top; log scale used so low- and high-view videos are both visible
+          <strong style={{ color: 'rgba(232,232,240,0.5)', fontStyle: 'normal' }}>Sensationalism Score:</strong> how extreme/clickbait-y the title phrasing is (e.g. "YOU WON'T BELIEVE…" scores near 1; factual titles score near 0)<br />
+          <strong style={{ color: 'rgba(232,232,240,0.5)', fontStyle: 'normal' }}>Views axis is log scale</strong> — so both 10K and 10M videos are visible without the low-view dots getting squashed at the bottom
         </p>
       </div>
     </div>
