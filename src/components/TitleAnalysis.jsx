@@ -174,7 +174,7 @@ function ScatterPlot({ onBrush }) {
 
     const W = wrap.offsetWidth || 500
     const H = wrap.offsetHeight || 280
-    const L = 52, R = 16, T = 16, B = 36
+    const L = 78, R = 16, T = 20, B = 36
     const PW = W - L - R
     const PH = H - T - B
 
@@ -183,7 +183,7 @@ function ScatterPlot({ onBrush }) {
       .attr('width', W).attr('height', H)
       .style('position', 'absolute').style('top', 0).style('left', 0)
 
-    const axisColor = 'rgba(232,232,240,0.25)'
+    const axisColor = 'rgba(232,232,240,0.35)'
     // y axis line with arrow
     dotSvg.append('line')
       .attr('x1', L).attr('x2', L).attr('y1', T + PH).attr('y2', T)
@@ -198,17 +198,20 @@ function ScatterPlot({ onBrush }) {
     dotSvg.append('polygon')
       .attr('points', `${L+PW-6},${T+PH-4} ${L+PW-6},${T+PH+4} ${L+PW},${T+PH}`)
       .attr('fill', axisColor)
-    // y axis tick labels
-    dotSvg.append('text').attr('x', L-6).attr('y', T+10)
-      .attr('text-anchor','end').attr('font-size',11).attr('fill',axisColor).text('10M views')
-    dotSvg.append('text').attr('x', L-6).attr('y', T+PH/2+4)
-      .attr('text-anchor','end').attr('font-size',10).attr('fill',axisColor).text('300K')
-    dotSvg.append('text').attr('x', L-6).attr('y', T+PH)
-      .attr('text-anchor','end').attr('font-size',11).attr('fill',axisColor).text('10K views')
+    // y axis tick labels — right-aligned with enough clearance from axis line
+    dotSvg.append('text').attr('x', L-10).attr('y', T+4)
+      .attr('text-anchor','end').attr('dominant-baseline','hanging')
+      .attr('font-size',11).attr('fill',axisColor).text('10M views')
+    dotSvg.append('text').attr('x', L-10).attr('y', T+PH/2)
+      .attr('text-anchor','end').attr('dominant-baseline','central')
+      .attr('font-size',10).attr('fill',axisColor).text('300K')
+    dotSvg.append('text').attr('x', L-10).attr('y', T+PH)
+      .attr('text-anchor','end').attr('dominant-baseline','auto')
+      .attr('font-size',11).attr('fill',axisColor).text('10K views')
     // y grid mid line
     dotSvg.append('line')
       .attr('x1', L).attr('x2', L+PW).attr('y1', T+PH/2).attr('y2', T+PH/2)
-      .attr('stroke', axisColor).attr('stroke-width', 0.4).attr('stroke-dasharray', '3 4')
+      .attr('stroke', 'rgba(255,255,255,0.07)').attr('stroke-width', 1).attr('stroke-dasharray', '3 4')
     // x axis tick labels — show meaning not raw numbers
     dotSvg.append('text').attr('x', L).attr('y', T+PH+18)
       .attr('text-anchor','start').attr('font-size',11).attr('fill',axisColor).text('← Neutral')
@@ -351,7 +354,7 @@ function ScatterPlot({ onBrush }) {
         <div className="scatter-axis-x" />
         <div className="scatter-axis-y" />
         <div className="s-lx">Title Sensationalism Score</div>
-        <div className="s-ly">Views</div>
+        {/* y-axis label drawn in SVG above */}
         <div className="s-insight">r = 0.007<br />Near-zero correlation</div>
         <div
           ref={tipRef}
