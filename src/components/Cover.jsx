@@ -21,7 +21,7 @@ export default function Cover() {
           What Does the<br />World <em>Watch?</em>
         </h1>
         <p style={{ fontSize: 18, lineHeight: 1.75, maxWidth: 520, color: 'var(--muted)', marginTop: 24 }}>
-          Six years. 23 countries. 10,000 trending videos. This is the story of how
+          Seven years. 23 countries. 10,000 trending videos. This is the story of how
           YouTube's trending tab reveals the pulse of global digital culture.
         </p>
 
@@ -34,7 +34,7 @@ export default function Cover() {
             { num: '10K', label: 'Trending Videos' },
             { num: '23',  label: 'Countries' },
             { num: '17',  label: 'Categories' },
-            { num: '6',   label: 'Years' },
+            { num: '7',   label: 'Years' },
           ].map(s => (
             <div key={s.label} className="d-flex flex-column gap-1">
               <span style={{ fontWeight: 800, fontSize: 32, color: 'var(--text)', lineHeight: 1 }}>
