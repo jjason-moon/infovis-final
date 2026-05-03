@@ -46,7 +46,7 @@ export default function Home() {
               <div className="rule" />
               <p className="body-text">
                 We dug through <strong>10,000 trending videos</strong> across 23 countries
-                and 6 years to find the patterns. Spoiler: it&apos;s not about clickbait.
+                and 7 years to find the patterns. Spoiler: it&apos;s not about clickbait.
                 It&apos;s about market, format, and covering things people actually care about.
               </p>
             </div>
