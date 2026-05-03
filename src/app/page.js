@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import Navbar from '@/components/Navbar'
 import Cover from '@/components/Cover'
@@ -26,6 +27,7 @@ function PodiumCard({ rank, flag, country, value, cardStyle }) {
 }
 
 export default function Home() {
+  const [geoSelectedCat, setGeoSelectedCat] = useState(null)
   return (
     <>
       <ScrollObserver />
@@ -53,7 +55,7 @@ export default function Home() {
                 {[
                   { num: '10K',  label: 'Trending videos analyzed', color: 'var(--accent)' },
                   { num: '23',   label: 'Countries in the dataset',  color: 'var(--red)' },
-                  { num: '6',    label: 'Years of data (2020–2026)', color: 'var(--accent)' },
+                  { num: '7',    label: 'Years of data (2020–2026)', color: 'var(--accent)' },
                   { num: '~0',   label: 'Clickbait↔view rate r',   color: 'var(--red)' },
                 ].map(s => (
                   <div key={s.label} className="stat-card">
@@ -123,7 +125,7 @@ export default function Home() {
             are strongest for a given content type.
           </p>
         </div>
-        <GeoExplorer />
+        <GeoExplorer onCategoryChange={setGeoSelectedCat} />
 
         {/* CHAPTER II BREAK */}
         <div className="ch-break reveal" id="ch2" style={{ marginTop: 80 }}>
@@ -133,7 +135,7 @@ export default function Home() {
             <div className="ch-text-sub">Likes, comments, video length — every category has its own signature.</div>
           </div>
         </div>
-        <GroupedBar />
+        <GroupedBar highlightCat={geoSelectedCat} />
 
         {/* CHAPTER III BREAK */}
         <div className="ch-break reveal" id="ch3">

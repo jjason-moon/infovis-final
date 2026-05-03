@@ -216,8 +216,7 @@ function ScatterPlot({ onBrush }) {
       .attr('text-anchor','end').attr('font-size',11).attr('fill',axisColor).text('Clickbait →')
 
     const dotEls = []
-
-    const BASE_COLOR = '#E8E8F0'  // single neutral color for all dots
+    const DEFAULT_OP = 0.22  // subtle category color by default
 
     SCATTER_DOTS.forEach((d, i) => {
       const x  = L + d.cb * PW
@@ -226,11 +225,11 @@ function ScatterPlot({ onBrush }) {
 
       const circle = dotSvg.append('circle')
         .attr('cx', x).attr('cy', y).attr('r', r)
-        .attr('fill', BASE_COLOR).attr('opacity', 0)
+        .attr('fill', d.color).attr('opacity', 0)
         .style('transition', `opacity .4s ${i * 0.03}s, fill .15s, stroke .15s`)
         .attr('stroke', 'none').attr('stroke-width', 1.5)
 
-      setTimeout(() => circle.attr('opacity', 0.35), 100 + i * 30)
+      setTimeout(() => circle.attr('opacity', DEFAULT_OP), 100 + i * 30)
 
       circle
         .on('mouseenter', function () {
@@ -243,7 +242,7 @@ function ScatterPlot({ onBrush }) {
           tip.style.opacity = '1'
         })
         .on('mouseleave', function () {
-          d3.select(this).attr('fill', BASE_COLOR).attr('opacity', 0.35).attr('r', r)
+          d3.select(this).attr('fill', d.color).attr('opacity', DEFAULT_OP).attr('r', r)
           if (tipRef.current) tipRef.current.style.opacity = '0'
         })
 
@@ -298,8 +297,8 @@ function ScatterPlot({ onBrush }) {
       dotEls.forEach(({ circle, d, x, y }) => {
         const inBrush = x >= x1 && x <= x2 && y >= y1 && y <= y2
         circle
-          .attr('fill', inBrush ? d.color : BASE_COLOR)
-          .attr('opacity', inBrush ? 0.9 : 0.08)
+          .attr('fill', d.color)
+          .attr('opacity', inBrush ? 0.9 : 0.05)
           .attr('stroke', inBrush ? 'rgba(255,255,255,0.4)' : 'none')
       })
 
@@ -334,7 +333,7 @@ function ScatterPlot({ onBrush }) {
     function clearBrush() {
       brushRect.attr('display', 'none')
       brushStart = null
-      dotEls.forEach(({ circle }) => circle.attr('fill', BASE_COLOR).attr('opacity', 0.35).attr('stroke', 'none'))
+      dotEls.forEach(({ circle, d }) => circle.attr('fill', d.color).attr('opacity', DEFAULT_OP).attr('stroke', 'none'))
       onBrush(null, 0)
     }
 
@@ -370,6 +369,15 @@ function ScatterPlot({ onBrush }) {
             whiteSpace: 'nowrap',
           }}
         />
+      </div>
+      {/* category color legend */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: 10 }}>
+        {[...new Map(SCATTER_DOTS.map(d => [d.cat, d.color])).entries()].map(([cat, color]) => (
+          <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--muted)' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, opacity: 0.85, flexShrink: 0 }} />
+            {cat}
+          </div>
+        ))}
       </div>
       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, fontStyle: 'italic', opacity: 0.7 }}>
         Drag to select a cluster · double-click to reset

@@ -389,26 +389,6 @@ body {
 }
 .geo-mode-btn.active { background: var(--accent); color: #0D0D14; }
 
-/* ── METRIC TABS ── */
-.metric-tab {
-  padding: 4px 11px;
-  font-size: 11px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--muted);
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.metric-tab.active {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(232,240,96,0.07);
-}
-
 /* ── GROUPED BAR BUTTON ── */
 .gbtn {
   padding: 4px 12px;
@@ -478,16 +458,6 @@ body {
   line-height: 1.4;
   color: var(--red);
 }
-.s-dot {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0;
-  transform: scale(0);
-  transition: opacity 0.4s, transform 0.4s;
-  cursor: pointer;
-}
-.s-dot.show { opacity: 0.72; transform: scale(1); }
-.s-dot:hover { opacity: 1; z-index: 10; }
 .brush-rect {
   fill: rgba(232,240,96,0.08);
   stroke: var(--accent);

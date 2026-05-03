@@ -186,7 +186,7 @@ function BarChart({ mode, selectedCountry, selectedCat, metric, selectedYear }) 
   return <div className="geo-chart-body" ref={bodyRef}>
     <div className="geo-empty">
       <div className="geo-empty-icon">🌍</div>
-      <div className="geo-empty-text">Click a country bubble<br />or a category in the legend.</div>
+      <div className="geo-empty-text">Click a country bubble on the map<br />or a category label below it.</div>
     </div>
   </div>
 }
@@ -227,12 +227,28 @@ function AreaChart({ countryCode, highlightCat, selectedYear, onYearChange }) {
       return obj
     })
 
-    const allVals = AREA_CATS.flatMap(cat => rows.map(r => r[cat.id]))
+    const DRAW_CATS = AREA_CATS.filter(c => c.id !== 'Others')
+    const allVals = DRAW_CATS.flatMap(cat => rows.map(r => r[cat.id]))
     const maxVal  = Math.ceil(Math.max(...allVals) / 5) * 5 || 50
 
     const x = d3.scalePoint().domain(sliced).range([0, PW]).padding(0.1)
     const y = d3.scaleLinear().domain([0, maxVal]).range([PH, 0])
     const g = d3.select(svgEl).append('g').attr('transform', `translate(${ML},${MT})`)
+
+    // click anywhere on the chart to select/deselect the nearest year
+    g.append('rect')
+      .attr('x', 0).attr('y', 0)
+      .attr('width', PW).attr('height', PH)
+      .attr('fill', 'transparent')
+      .attr('cursor', 'crosshair')
+    g.on('click', function(event) {
+      if (!onYearChange) return
+      const [mx] = d3.pointer(event)
+      const nearestYr = sliced.reduce((best, yr) =>
+        Math.abs(x(yr) - mx) < Math.abs(x(best) - mx) ? yr : best
+      )
+      onYearChange(nearestYr === selectedYear ? null : nearestYr)
+    })
 
     // grid
     y.ticks(4).forEach(v => {
@@ -253,7 +269,7 @@ function AreaChart({ countryCode, highlightCat, selectedYear, onYearChange }) {
 
     const tip = tipRef.current
 
-    AREA_CATS.forEach(cat => {
+    DRAW_CATS.forEach(cat => {
       const dim  = highlightCat && highlightCat !== cat.id
       const vals = rows.map(r => r[cat.id])
       const op   = dim ? 0.08 : 0.85
@@ -311,19 +327,38 @@ function AreaChart({ countryCode, highlightCat, selectedYear, onYearChange }) {
         .text(yr)
     })
 
-    // year highlight — vertical line + label
+    // year highlight — draggable vertical line
     if (selectedYear !== null && sliced.includes(selectedYear)) {
       const xPos = x(selectedYear)
+
+      const snapDrag = d3.drag()
+        .on('drag', function(event) {
+          if (!onYearChange) return
+          const nearestYr = sliced.reduce((best, yr) =>
+            Math.abs(x(yr) - event.x) < Math.abs(x(best) - event.x) ? yr : best
+          )
+          if (nearestYr !== selectedYear) onYearChange(nearestYr)
+        })
+
+      // wide transparent hit area so dragging is easy
+      g.append('rect')
+        .attr('x', xPos - 16).attr('y', 0)
+        .attr('width', 32).attr('height', PH)
+        .attr('fill', 'rgba(232,240,96,0.04)')
+        .attr('cursor', 'ew-resize')
+        .call(snapDrag)
+
       g.append('line')
         .attr('x1', xPos).attr('x2', xPos).attr('y1', 0).attr('y2', PH)
         .attr('stroke', 'var(--accent)').attr('stroke-width', 1.5)
         .attr('stroke-dasharray', '4 3').attr('opacity', 0.5)
+        .attr('pointer-events', 'none')
       g.append('text')
         .attr('x', xPos).attr('y', -4)
         .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700)
         .attr('fill', 'var(--accent)').text(selectedYear)
     }
-  }, [countryCode, highlightCat, selectedYear])
+  }, [countryCode, highlightCat, selectedYear, onYearChange])
 
   useEffect(() => { draw() }, [draw])
 
@@ -361,9 +396,9 @@ function AreaChart({ countryCode, highlightCat, selectedYear, onYearChange }) {
           >
             <div>
               <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                View 2 · Temporal Trend
+                View 1 · Temporal Trend
                 <span style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: 1, fontWeight: 400, textTransform: 'none' }}>
-                  · drag the year scrubber above to highlight a year
+                  · click or drag the chart to select a year
                 </span>
               </div>
               {country ? (
@@ -387,7 +422,7 @@ function AreaChart({ countryCode, highlightCat, selectedYear, onYearChange }) {
 
       {/* legend */}
       <div className="d-flex flex-wrap gap-2 px-3 pt-2" style={{ flexShrink: 0 }}>
-        {AREA_CATS.map(cat => (
+        {AREA_CATS.filter(c => c.id !== 'Others').map(cat => (
           <div key={cat.id} className="d-flex align-items-center gap-1" style={{ fontSize: 12, color: 'var(--muted)' }}>
             <div style={{ width: 8, height: 8, borderRadius: 2, background: cat.color, flexShrink: 0 }} />
             {cat.id}
@@ -412,36 +447,71 @@ function AreaChart({ countryCode, highlightCat, selectedYear, onYearChange }) {
 
 // ── SummaryCard ───────────────────────────────────────────────────────
 function SummaryCard({ countryCode, mode, selectedCat }) {
-  // category mode — show top countries by engagement for this category
+  // category mode — show aggregate category stats (NOT a ranking, BarChart already ranks)
   if (mode === 'category' && selectedCat && !countryCode) {
     const catColor = CAT_COLOR[selectedCat] || 'var(--accent)'
-    const topCountries = COUNTRIES
+    const catEngVals = Object.values(CAT_ENG[selectedCat] || {})
+    const avgEng = catEngVals.length
+      ? (catEngVals.reduce((s, v) => s + v, 0) / catEngVals.length).toFixed(2)
+      : '—'
+    const topCountry = COUNTRIES
       .filter(c => CAT_ENG[selectedCat]?.[c.code] != null)
-      .sort((a, b) => (CAT_ENG[selectedCat][b.code] || 0) - (CAT_ENG[selectedCat][a.code] || 0))
-      .slice(0, 8)
+      .sort((a, b) => CAT_ENG[selectedCat][b.code] - CAT_ENG[selectedCat][a.code])[0]
+    const botCountry = COUNTRIES
+      .filter(c => CAT_ENG[selectedCat]?.[c.code] != null)
+      .sort((a, b) => CAT_ENG[selectedCat][a.code] - CAT_ENG[selectedCat][b.code])[0]
+    const catIdx = GEO_CATS.findIndex(c => c.id === selectedCat)
+    const topByShare = catIdx >= 0
+      ? [...COUNTRIES].sort((a, b) => (COUNTRY_CATS[b.code]?.[catIdx] || 0) - (COUNTRY_CATS[a.code]?.[catIdx] || 0))[0]
+      : null
+    const aboveAvgCount = COUNTRIES.filter(c =>
+      (CAT_ENG[selectedCat]?.[c.code] || 0) > parseFloat(avgEng)
+    ).length
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '12px 18px 8px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)', flexShrink: 0, borderLeft: `3px solid ${catColor}` }}>
-          <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: catColor }}>Category</div>
+          <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: catColor }}>Category Stats</div>
           <div style={{ fontWeight: 700, fontSize: 15, color: catColor }}>{selectedCat}</div>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Top countries by engagement</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Global snapshot · all years</div>
         </div>
-        <div style={{ flex: 1, padding: '14px 18px', overflowY: 'auto' }}>
-          {topCountries.map((c, i) => {
-            const eng = CAT_ENG[selectedCat][c.code]
-            return (
-              <div key={c.code} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <div style={{ fontSize: 11, color: 'var(--muted)', width: 18, flexShrink: 0 }}>#{i + 1}</div>
-                <div style={{ fontSize: 16, lineHeight: 1 }}>{c.flag}</div>
-                <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{c.name}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: catColor }}>{eng.toFixed(2)}</div>
+        <div style={{ flex: 1, padding: '16px 18px', overflowY: 'auto' }}>
+          <div className="row g-2 mb-3">
+            <div className="col-6">
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
+                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Avg Engagement</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: catColor }}>{avgEng}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>{aboveAvgCount} markets above avg</div>
               </div>
-            )
-          })}
+            </div>
+            <div className="col-6">
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
+                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Top Share</div>
+                {topByShare && (
+                  <>
+                    <div style={{ fontSize: 20 }}>{topByShare.flag}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>{topByShare.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>
+                      {((COUNTRY_CATS[topByShare.code]?.[catIdx] || 0)).toFixed(1)}% of trending
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 2 }}>
+            Best engagement:&nbsp;
+            <strong style={{ color: catColor }}>{topCountry?.flag} {topCountry?.name}</strong>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}> · {topCountry && CAT_ENG[selectedCat][topCountry.code].toFixed(2)}</span>
+            <br />
+            Lowest engagement:&nbsp;
+            <strong style={{ color: 'var(--text)' }}>{botCountry?.flag} {botCountry?.name}</strong>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}> · {botCountry && CAT_ENG[selectedCat][botCountry.code].toFixed(2)}</span>
+          </div>
         </div>
         <div style={{ padding: '8px 18px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           <p style={{ fontSize: 10, color: 'var(--muted)', fontStyle: 'italic', margin: 0, opacity: 0.6, lineHeight: 1.5 }}>
-            Click a country bubble on the map to switch to country view.
+            Click a country bubble on the map to see its country-level detail.
           </p>
         </div>
       </div>
@@ -508,7 +578,7 @@ function SummaryCard({ countryCode, mode, selectedCat }) {
         <div style={{ fontSize: 15, color: 'var(--muted)', lineHeight: 2 }}>
           Top category: <strong style={{ color: topColor }}>{topCatName}</strong><br />
           Total trending videos: <strong style={{ color: 'var(--text)' }}>{c.vids.toLocaleString()}</strong><br />
-          <span style={{ opacity: 0.5, fontSize: 12 }}>↓ Area chart shows temporal trend</span>
+          <span style={{ opacity: 0.5, fontSize: 12 }}>← Area chart shows temporal trend</span>
         </div>
       </div>
     </div>
@@ -766,14 +836,14 @@ function GeoMap({ mode, selectedCountry, selectedCat, onCountryClick, is3D, sele
   )
 }
 
-const ENG_DEF = 'Engagement Score: composite of likes, comments & shares relative to views, scale 0–10 — all-time average across 2020–2026 (not year-specific)'
+const ENG_DEF   = 'Engagement Score: composite of likes, comments & shares relative to views, scale 0–10 — all-time average across 2020–2026 (not year-specific)'
+const SHARE_DEF = 'Category Share: % of this country\'s trending videos belonging to each category — overall average across all years; use the area chart above to see how these shares shifted year by year'
 
 // ── Main GeoExplorer ─────────────────────────────────────────────────
-export default function GeoExplorer() {
+export default function GeoExplorer({ onCategoryChange }) {
   const [mode,            setMode]            = useState('country')
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedCat,     setSelectedCat]     = useState(null)
-  const [highlightCat] = useState(null)
   const [is3D,            setIs3D]            = useState(false)
   const [selectedYear,    setSelectedYear]    = useState(null)
 
@@ -787,11 +857,12 @@ export default function GeoExplorer() {
     setMode('category')
     setSelectedCat(catId)
     setSelectedCountry(null)
-  }, [])
+    onCategoryChange?.(catId)
+  }, [onCategoryChange])
 
   const handleModeToggle = m => {
     setMode(m)
-    if (m === 'country') setSelectedCat(null)
+    if (m === 'country') { setSelectedCat(null); onCategoryChange?.(null) }
     else setSelectedCountry(null)
   }
 
@@ -870,15 +941,16 @@ export default function GeoExplorer() {
         {/* area chart — temporal trend for selected country, highlights selected year */}
         <AreaChart
           countryCode={selectedCountry}
-          highlightCat={highlightCat}
+          highlightCat={selectedCat}
           selectedYear={selectedYear}
+          onYearChange={setSelectedYear}
         />
       </div>
 
       {/* ── VIEW 2: Engagement Ranking + Summary ── */}
       <div className="geo-bottom-row">
 
-        {/* engagement ranking bar chart */}
+        {/* bar chart: country mode = category share ranking; category mode = country engagement ranking */}
         <div className="geo-chart-panel">
           <div style={{ padding: '14px 18px 10px', borderBottom: '1px solid var(--border)', flexShrink: 0, background: 'var(--surface2)' }}>
             <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
@@ -889,10 +961,12 @@ export default function GeoExplorer() {
                 ? `${COUNTRIES.find(c => c.code === selectedCountry)?.flag} ${COUNTRIES.find(c => c.code === selectedCountry)?.name}`
                 : mode === 'category' && selectedCat
                 ? `${selectedCat} — Global Comparison`
-                : 'Engagement Ranking'}
+                : mode === 'country' ? 'Category Breakdown' : 'Engagement Ranking'}
             </div>
             <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 3 }}>
-              {selectedCountry || selectedCat
+              {selectedCountry
+                ? <>Category Share · <span style={{ color: selectedYear ? 'var(--accent)' : 'var(--muted)' }}>{selectedYear ? selectedYear : 'All years (2020–2026)'}</span></>
+                : selectedCat
                 ? 'Engagement Score · All-time average'
                 : 'Select a bubble or category to explore.'}
             </div>
@@ -902,13 +976,13 @@ export default function GeoExplorer() {
             mode={mode}
             selectedCountry={selectedCountry}
             selectedCat={selectedCat}
-            metric="engagement"
-            selectedYear={null}
+            metric={mode === 'country' ? 'videos' : 'engagement'}
+            selectedYear={mode === 'country' ? selectedYear : null}
           />
 
           <div style={{ padding: '8px 18px 12px', flexShrink: 0, borderTop: '1px solid var(--border)' }}>
             <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', margin: 0, lineHeight: 1.6, opacity: 0.7 }}>
-              {ENG_DEF}
+              {mode === 'country' ? SHARE_DEF : ENG_DEF}
             </p>
           </div>
 
@@ -918,8 +992,8 @@ export default function GeoExplorer() {
           >
             <span>Mode: <span style={{ color: 'var(--accent)' }}>{mode === 'country' ? 'Country' : 'Category'}</span></span>
             <span>Selected: <span style={{ color: 'var(--accent)' }}>{selectedCountry || selectedCat || '—'}</span></span>
-            <span>Metric: <span style={{ color: 'var(--accent)' }}>Engagement</span></span>
-            <span>Data: <span style={{ color: 'var(--accent)' }}>All-time</span></span>
+            <span>Metric: <span style={{ color: 'var(--accent)' }}>{mode === 'country' ? 'Cat. Share' : 'Engagement'}</span></span>
+            <span>Data: <span style={{ color: 'var(--accent)' }}>{mode === 'country' && selectedYear ? selectedYear : 'All-time'}</span></span>
           </div>
         </div>
 
