@@ -536,7 +536,7 @@ function SummaryCard({ countryCode, mode, selectedCat }) {
 
   const c          = COUNTRIES.find(x => x.code === countryCode)
   const globalEng  = 7.55
-  const globalViews = 2800
+  const globalViews = 2989252  // real average across 23 countries
   const engDiff    = ((c.eng - globalEng) / globalEng * 100).toFixed(0)
   const viewDiff   = ((c.views - globalViews) / globalViews * 100).toFixed(0)
   const engSign    = c.eng   > globalEng   ? '+' : ''
@@ -567,7 +567,7 @@ function SummaryCard({ countryCode, mode, selectedCat }) {
             <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: 10 }}>
               <div style={{ fontSize: 12, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>Avg Views</div>
               <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent)' }}>
-                {c.views >= 1000 ? (c.views / 1000).toFixed(1) + 'M' : c.views + 'K'}
+                {c.views >= 1e6 ? (c.views / 1e6).toFixed(1) + 'M' : c.views >= 1000 ? (c.views / 1000).toFixed(0) + 'K' : c.views}
               </div>
               <div style={{ fontSize: 12, color: isViewPos ? '#50F0A0' : '#F05A7E', marginTop: 3 }}>
                 {viewSign}{viewDiff}% vs global
@@ -816,7 +816,7 @@ function GeoMap({ mode, selectedCountry, selectedCat, onCountryClick, is3D, sele
           <div class="tt-country">${c.flag} ${c.name}</div>
           <div class="tt-row"><span>Top Category</span><span style="color:${color}">${c.top}</span></div>
           <div class="tt-row"><span>Engagement</span><span>${c.eng.toFixed(2)}</span></div>
-          <div class="tt-row"><span>Avg Views</span><span>${c.views.toLocaleString()}K</span></div>
+          <div class="tt-row"><span>Avg Views</span><span>${c.views >= 1e6 ? (c.views/1e6).toFixed(1)+'M' : c.views >= 1000 ? (c.views/1000).toFixed(0)+'K' : c.views}</span></div>
         `
       })
       .on('mouseleave', () => { if (tip) tip.style.opacity = '0' })
@@ -1003,4 +1003,3 @@ export default function GeoExplorer({ onCategoryChange }) {
     </div>
   )
 }
-  
