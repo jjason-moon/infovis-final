@@ -135,7 +135,7 @@ export default function Home() {
             <div className="ch-text-sub">Likes, comments, video length — every category has its own signature.</div>
           </div>
         </div>
-        <GroupedBar highlightCat={geoSelectedCat} />
+        <GroupedBar />
 
         {/* CHAPTER III BREAK */}
         <div className="ch-break reveal" id="ch3">

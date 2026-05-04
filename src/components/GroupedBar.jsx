@@ -37,23 +37,23 @@ const METRIC_DEFS = {
   duration: 'Avg Video Duration: mean length of trending videos in this category (minutes); longer = more watch time commitment required',
 }
 
-export default function GroupedBar({ highlightCat }) {
+export default function GroupedBar() {
   const svgRef  = useRef(null)
   const wrapRef = useRef(null)
   const tipRef  = useRef(null)
   const [metric, setMetric] = useState('like')
 
   useEffect(() => {
-    draw(metric, highlightCat)
-  }, [metric, highlightCat])
+    draw(metric)
+  }, [metric])
 
   useEffect(() => {
-    const ro = new ResizeObserver(() => draw(metric, highlightCat))
+    const ro = new ResizeObserver(() => draw(metric))
     if (wrapRef.current) ro.observe(wrapRef.current)
     return () => ro.disconnect()
-  }, [metric, highlightCat])
+  }, [metric])
 
-  function draw(m, hlCat) {
+  function draw(m) {
     const wrap  = wrapRef.current
     const svgEl = svgRef.current
     if (!wrap || !svgEl) return
@@ -112,9 +112,7 @@ export default function GroupedBar({ highlightCat }) {
       const bw          = x.bandwidth()
       const barH        = PH - y(cat.val)
       const isTop       = i === 0
-      const isLinked    = hlCat && cat.id === hlCat
-      const isDimmed    = hlCat && !isLinked
-      const barOpacity  = isLinked ? 0.95 : isDimmed ? 0.18 : (isTop ? 0.92 : 0.60)
+      const barOpacity  = isTop ? 0.92 : 0.60
 
       // bar
       g.append('rect')
@@ -124,20 +122,8 @@ export default function GroupedBar({ highlightCat }) {
         .attr('fill', cat.color)
         .attr('opacity', barOpacity)
 
-      // solid border for linked-from-map category; dashed for top
-      if (isLinked) {
-        g.append('rect')
-          .attr('x', bx - 2).attr('y', y(cat.val) - 2)
-          .attr('width', bw + 4).attr('height', barH + 2)
-          .attr('rx', 3).attr('fill', 'none')
-          .attr('stroke', cat.color).attr('stroke-width', 2)
-          .attr('opacity', 0.9)
-        g.append('text')
-          .attr('x', bx + bw / 2).attr('y', y(cat.val) - 16)
-          .attr('text-anchor', 'middle').attr('font-size', 9)
-          .attr('fill', cat.color).attr('opacity', 0.7)
-          .text('← map')
-      } else if (isTop && !hlCat) {
+      // dashed border for top category
+      if (isTop) {
         g.append('rect')
           .attr('x', bx - 2).attr('y', y(cat.val) - 2)
           .attr('width', bw + 4).attr('height', barH + 2)
@@ -152,16 +138,14 @@ export default function GroupedBar({ highlightCat }) {
         .attr('text-anchor', 'middle')
         .attr('font-size', 12).attr('font-weight', '700')
         .attr('fill', cat.color)
-        .attr('opacity', isDimmed ? 0.25 : 1)
         .text(cat.val.toFixed(1))
 
       // x label
       g.append('text')
         .attr('x', bx + bw / 2).attr('y', PH + 16)
         .attr('text-anchor', 'middle')
-        .attr('font-size', isLinked ? 12 : 11)
-        .attr('font-weight', isLinked ? '700' : '400')
-        .attr('fill', isLinked ? cat.color : isDimmed ? 'rgba(232,232,240,0.2)' : 'rgba(232,232,240,0.5)')
+        .attr('font-size', 11)
+        .attr('fill', 'rgba(232,232,240,0.5)')
         .text(cat.id)
 
       // hover area
@@ -196,6 +180,8 @@ export default function GroupedBar({ highlightCat }) {
         })
     })
   }
+
+
 
   return (
     <section className="narrative reveal" id="ch2-content" style={{ paddingTop: 64, paddingBottom: 64 }}>
